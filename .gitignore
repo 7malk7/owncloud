@@ -1,0 +1,66 @@
+/.htaccess
+/.user.ini
+/AUTHORS
+/console.php
+/COPYING-AGPL
+/cron.php
+/db_structure.xml
+/indie.json
+/occ
+/public.php
+/remote.php
+/robots.txt
+/status.php
+/version.php
+
+# 3rdparty
+/3rdparty
+
+# default owncloud apps
+/apps\activity
+/apps\external
+/apps\files
+/apps\files_encryption
+/apps\files_external
+/apps\files_locking
+/apps\files_pdfviewer
+/apps\files_sharing
+/apps\files_texteditor
+/apps\files_trashbin
+/apps\files_versions
+/apps\files_videoviewer
+/apps\firstrunwizard
+/apps\gallery
+/apps\provisioning_api
+/apps\templateeditor
+/apps\updater
+/apps\user_external
+/apps\user_ldap
+/apps\user_webdavauth
+
+# config
+/config
+
+# core
+/core
+
+# l10n
+/l10n
+
+# lib
+/lib
+
+# NetBeans nbproject
+/nbproject
+
+# ocs
+/ocs
+
+# settings
+/settings
+
+# themes
+/themes
+
+# eclipse .metadata
+/.metadata

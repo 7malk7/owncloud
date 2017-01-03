@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<info>
+    <id>deducttodb</id>
+    <name>DeductToDB Application</name>
+    <description>DeductToDB Application</description>
+    <licence>AGPL</licence>
+    <author>Alexy Yurchanka</author>
+    <version>0.2.7</version>
+    <namespace>DeductToDB</namespace>
+    <category>other</category>
+    <ocsid>1234</ocsid>
+
+    <types>
+	<filesystem/>
+    </types>
+    
+    <dependencies>
+        <owncloud min-version="8.0" max-version="14.0"/>
+    </dependencies>
+</info>

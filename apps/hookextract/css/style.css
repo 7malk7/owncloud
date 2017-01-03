@@ -1,0 +1,14 @@
+#hello {
+	color: red;
+}
+
+div#app-content{
+	padding-left: 10px;
+}
+div#app-content-wrapper table{
+	border-collapse: collapse;
+}
+
+div#app-content-wrapper table, th, td{
+	border: 1px solid black;
+}
