@@ -194,10 +194,20 @@ class Hookextract extends App {
 		return $content;
 	}
 
+	/**
+	 * Simply method that posts back the payload of the request
+	 * @NoAdminRequired
+	 * @NoCSRFRequired
+	 */
 	public function initFiles($folder){
 		
 	}
 
+	/**
+	 * Simply method that posts back the payload of the request
+	 * @NoAdminRequired
+	 * @NoCSRFRequired
+	 */
 	public function initialization(){
 		 
 		
