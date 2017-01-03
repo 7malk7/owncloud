@@ -4,7 +4,7 @@
   $params = $_;
    if($params['everyday']){
    	?>
-   	<h4>Already defined jobs:</h4>
+   	<h3>Already defined jobs:</h3>
     <table>
     <tr><td colspan="1">Label:</td><td colspan="2"><p><?php echo $params['label']?></p></td>
     <td colspan="1"><button id="setActive" <?php if($params['active'] != "-"){echo "disabled";}?>>Activate</button>
