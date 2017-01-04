@@ -59,35 +59,32 @@ class PageController extends Controller {
      * @NoCSRFRequired
      */
     public function index() {
-
         $imgurl = \OC::$server->getURLGenerator()->imagePath('hookextract', 'image002.jpg');
-        //$params = ['user' => $this->userId, 'imgurl' => $imgurl];
-        
-        $iniMapper = new \OCA\DeductToDB\Db\paramsMapper($this->db);        
-         
+
+        $iniMapper = new \OCA\DeductToDB\Db\paramsMapper($this->db);
+
         $recurr = $iniMapper->findByNameWithDefault("conf1_recurrency", "");
-        if($recurr){
-        	$params = [
-        			label    => $iniMapper->findByNameWithDefault("conf1_label", ""),
-        			active    => $iniMapper->findByNameWithDefault("conf1_active","-"),
-        			everyday => $recurr,
-        			begin    => $iniMapper->findByNameWithDefault("conf1_begin", ""),
-        			begin_selection => $iniMapper->findByNameWithDefault("conf1_begin_selection", ""),
-        			end_selection => $iniMapper->findByNameWithDefault("conf1_end_selection", ""),
-        			plushour => $iniMapper->findByNameWithDefault("conf1_plus1h", ""),
-        			week1    => $iniMapper->findByNameWithDefault("conf1_week1", ""),
-        			week2    => $iniMapper->findByNameWithDefault("conf1_week2", ""),
-        			week3    => $iniMapper->findByNameWithDefault("conf1_week3", ""),
-        			week4    => $iniMapper->findByNameWithDefault("conf1_week4", ""),
-        			week5    => $iniMapper->findByNameWithDefault("conf1_week5", ""),
-        			week6    => $iniMapper->findByNameWithDefault("conf1_week6", ""),
-        			week7    => $iniMapper->findByNameWithDefault("conf1_week7", ""),
-        			user     => $this->userId,
-        			imgurl   => $imgurl
-        	];
-        	 
+        if ($recurr) {
+            $params = [
+                label => $iniMapper->findByNameWithDefault("conf1_label", ""),
+                active => $iniMapper->findByNameWithDefault("conf1_active", "-"),
+                everyday => $recurr,
+                begin => $iniMapper->findByNameWithDefault("conf1_begin", ""),
+                begin_selection => $iniMapper->findByNameWithDefault("conf1_begin_selection", ""),
+                end_selection => $iniMapper->findByNameWithDefault("conf1_end_selection", ""),
+                plushour => $iniMapper->findByNameWithDefault("conf1_plus1h", ""),
+                week1 => $iniMapper->findByNameWithDefault("conf1_week1", ""),
+                week2 => $iniMapper->findByNameWithDefault("conf1_week2", ""),
+                week3 => $iniMapper->findByNameWithDefault("conf1_week3", ""),
+                week4 => $iniMapper->findByNameWithDefault("conf1_week4", ""),
+                week5 => $iniMapper->findByNameWithDefault("conf1_week5", ""),
+                week6 => $iniMapper->findByNameWithDefault("conf1_week6", ""),
+                week7 => $iniMapper->findByNameWithDefault("conf1_week7", ""),
+                user => $this->userId,
+                imgurl => $imgurl
+            ];
         }
-        
+
         return new TemplateResponse('hookextract', 'main', $params);  // templates/main.php
     }
 
@@ -97,14 +94,13 @@ class PageController extends Controller {
      * @NoCSRFRequired
      */
     public function xlsdwnl($formtype, $datefrom, $dateto) {
-    	
-    	$app = new \OCA\Hookextract\AppInfo\Hookextract();
-    	$content = $app->dbGetXls($formtype, $datefrom, $dateto, $this->db, $this->app->getUserFolder(), false);   	
-        
+        $app = new \OCA\Hookextract\AppInfo\Hookextract();
+        $content = $app->dbGetXls($formtype, $datefrom, $dateto, $this->db, $this->app->getUserFolder(), false);
+
         $today = date_create();
         $today_str = $today->format('YmdHis');
 
-        return new FileResponse( $today_str.'.xls', 'application/xml', $content);
+        return new FileResponse($today_str . '.xls', 'application/xml', $content);
     }
 
     /**
@@ -114,13 +110,12 @@ class PageController extends Controller {
     public function preselect($from, $to) {
         $mapper = new FormsMapper($this->db);
         $arch_mapper = new \OCA\DeductToDB\Db\entryArchiveMapper($this->db);
-        
+
         $strout = "";
         $strout .= "<table><tr><td>";
 
         $data = $mapper->selectFormsbyInterval($from, $to);
         $archive = [];
-        //var_dump($data);
         $data_uniq = [];
         foreach ($data as $line_u) {
             $data_uniq[] = $line_u->getType();
@@ -134,17 +129,16 @@ class PageController extends Controller {
             $strout .= "<option value='" . $line . "'>" . $line . "</option>";
         }
         $strout .= "</select></p>";
-        
+
         $archive = $arch_mapper->findByDate($from, $to);
-        if(count($archive) >= 0){
-        	$strout .= '<br/><p>Corresponding archive records found. Select?';
-        	$strout .= '<input type="checkbox" name="archive" id="archive" /></p>';
-        	//$strout .= '<br/><p><button id="select">Select</button></p>';
+        if (count($archive) >= 0) {
+            $strout .= '<br/><p>Corresponding archive records found. Select?';
+            $strout .= '<input type="checkbox" name="archive" id="archive" /></p>';
         }
-        
+
         $strout .= '<br/><p><button id="select">Select</button></p>';
         $strout .= "</td><td>";
-        
+
         $strout .= "<p>Fields control</p>";
         $strout .= "<table>";
         $strout .= "		<tr><td>";
@@ -156,7 +150,7 @@ class PageController extends Controller {
         $strout .= "		<td></td>";
         $strout .= "</tr>";
         $strout .= "</table>";
-        
+
         $strout .= "</td></tr></table>";
         return new DataResponse($strout);
     }
@@ -168,31 +162,27 @@ class PageController extends Controller {
     public function select($formtype, $datefrom, $dateto) {
         $params = ['user' => $this->userId];
         $mapper = new EntryMapper($this->db);
-        
+
         $in_array = split(";", $formtype);
-        
+
         $strout = "<p>Data preview:</p>";
-        
+
         $headers = [];
         $output = [];
 
-        
-        foreach($in_array as $type){
-
-        	$data = $mapper->findByFormType($type, $datefrom, $dateto);
-        
-        	foreach ($data as $line) {
-
-            	if (!$headers[$line->getKey()]) {
-                	$headers[$line->getKey()] = [];
-            	}
-
-            	if (!$output[$line->getFormid()]) {
-                	$output[$line->getFormid()] = [$line->getKey() => $line->getValue()];
-            	} else {
-                	$output[$line->getFormid()][$line->getKey()] = $line->getValue();
-            	}
-        	}
+        foreach ($in_array as $type) {
+            $data = $mapper->findByFormType($type, $datefrom, $dateto);
+            foreach ($data as $line) {
+                if (!$headers[$line->getKey()]) {
+                    $headers[$line->getKey()] = [];
+                }
+                
+                if (!$output[$line->getFormid()]) {
+                    $output[$line->getFormid()] = [$line->getKey() => $line->getValue()];
+                } else {
+                    $output[$line->getFormid()][$line->getKey()] = $line->getValue();
+                }
+            }
         }
 
         $strout .= '<p><table border="1">';
@@ -224,60 +214,56 @@ class PageController extends Controller {
     public function doEcho($echo) {
         return new DataResponse(['echo' => $echo]);
     }
-    
+
     /**
      * Simply method that posts back the payload of the request
      * @NoAdminRequired
      * @NoCSRFRequired
      */
     public function timers($active, $label, $everyday, $begin, $plushour, $week1, $week2, $week3, $week4, $week5, $week6, $week7, $begin_selection, $end_selection) {
-    	
-    	$iniMapper = new \OCA\DeductToDB\Db\paramsMapper($this->db);
-    	$iniMapper->setByName("conf1_active", $active);
-    	
-    	if($everyday == "1"){  //  every day reurrency
-    		
-    		$iniMapper->setByName("conf1_label", $label);
-    		$iniMapper->setByName("conf1_recurrency", "daily");
-    		$iniMapper->setByName("conf1_begin", $begin);
-    		$iniMapper->setByName("conf1_begin_selection", $begin_selection);
-    		$iniMapper->setByName("conf1_end_selection", $end_selection);
-    		$iniMapper->setByName("conf1_plus1h", $plushour);
-    		
-    	}else{
-    		
-    		$iniMapper->setByName("conf1_recurrency", "weekly");
-    	}
-    	$params = [];
-    	
-    	$imgurl = \OC::$server->getURLGenerator()->imagePath('hookextract', 'image002.jpg');
-    	
-        $recurr = $iniMapper->findByNameWithDefault("conf1_recurrency","");
-        if($recurr){
-    		$params = [
-    				label    => $iniMapper->findByNameWithDefault("conf1_label",""),
-    				active    => $iniMapper->findByNameWithDefault("conf1_active","-"),
-    				everyday => $recurr,
-    				begin    => $iniMapper->findByNameWithDefault("conf1_begin",""),
-    				begin_selection => $iniMapper->findByNameWithDefault("conf1_begin_selection",""),
-    				end_selection => $iniMapper->findByNameWithDefault("conf1_end_selection",""),
-    				plushour => $iniMapper->findByNameWithDefault("conf1_plus1h",""),
-    				week1    => $iniMapper->findByNameWithDefault("conf1_week1",""),
-    				week2    => $iniMapper->findByNameWithDefault("conf1_week2",""),
-    				week3    => $iniMapper->findByNameWithDefault("conf1_week3",""),
-    				week4    => $iniMapper->findByNameWithDefault("conf1_week4",""),
-    				week5    => $iniMapper->findByNameWithDefault("conf1_week5",""),
-    				week6    => $iniMapper->findByNameWithDefault("conf1_week6",""),
-    				week7    => $iniMapper->findByNameWithDefault("conf1_week7",""),
-    				user     => $this->userId,
-    				imgurl   => $imgurl
-    		];
-    	
+
+        $iniMapper = new \OCA\DeductToDB\Db\paramsMapper($this->db);
+        $iniMapper->setByName("conf1_active", $active);
+
+        if ($everyday == "1") {  //  every day recurrency
+            $iniMapper->setByName("conf1_label", $label);
+            $iniMapper->setByName("conf1_recurrency", "daily");
+            $iniMapper->setByName("conf1_begin", $begin);
+            $iniMapper->setByName("conf1_begin_selection", $begin_selection);
+            $iniMapper->setByName("conf1_end_selection", $end_selection);
+            $iniMapper->setByName("conf1_plus1h", $plushour);
+        } else {
+            $iniMapper->setByName("conf1_recurrency", "weekly");
         }
-    	
-    	return new TemplateResponse('hookextract', 'part.content', $params);
+        $params = [];
+
+        $imgurl = \OC::$server->getURLGenerator()->imagePath('hookextract', 'image002.jpg');
+
+        $recurr = $iniMapper->findByNameWithDefault("conf1_recurrency", "");
+        if ($recurr) {
+            $params = [
+                label => $iniMapper->findByNameWithDefault("conf1_label", ""),
+                active => $iniMapper->findByNameWithDefault("conf1_active", "-"),
+                everyday => $recurr,
+                begin => $iniMapper->findByNameWithDefault("conf1_begin", ""),
+                begin_selection => $iniMapper->findByNameWithDefault("conf1_begin_selection", ""),
+                end_selection => $iniMapper->findByNameWithDefault("conf1_end_selection", ""),
+                plushour => $iniMapper->findByNameWithDefault("conf1_plus1h", ""),
+                week1 => $iniMapper->findByNameWithDefault("conf1_week1", ""),
+                week2 => $iniMapper->findByNameWithDefault("conf1_week2", ""),
+                week3 => $iniMapper->findByNameWithDefault("conf1_week3", ""),
+                week4 => $iniMapper->findByNameWithDefault("conf1_week4", ""),
+                week5 => $iniMapper->findByNameWithDefault("conf1_week5", ""),
+                week6 => $iniMapper->findByNameWithDefault("conf1_week6", ""),
+                week7 => $iniMapper->findByNameWithDefault("conf1_week7", ""),
+                user => $this->userId,
+                imgurl => $imgurl
+            ];
+        }
+
+        return new TemplateResponse('hookextract', 'part.content', $params);
     }
-    
+
     /**
      * Simply method that posts back the payload of the request
      * @NoAdminRequired
@@ -302,14 +288,13 @@ class PageController extends Controller {
 
                 $keys = $objWorksheet->rangeToArray('A1:' . $highestColumn . '1', NULL, TRUE, FALSE);
                 $data = $objWorksheet->rangeToArray('A2:' . $highestColumn . $highestRow, NULL, TRUE, FALSE);
-                
+
                 // if the 1st row is empty then the whole document is empty
-                $errors = array_filter($data[0]);                      
+                $errors = array_filter($data[0]);
                 if (empty($errors) == false) {
                     $mapper = new EntryArchiveMapper($this->db);
                     $insertFlag = $mapper->insertFromArray($keys[0], $data);
-                }
-                else {
+                } else {
                     $insertFlag = -1;
                 }
             } else {

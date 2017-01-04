@@ -26,6 +26,7 @@ class entryarchive extends Entity {
     protected $date_entry;
     protected $modified;
     protected $order;
+    protected $creator;
 
     public function jsonSerialize() {
         return [
@@ -36,7 +37,8 @@ class entryarchive extends Entity {
             'valuedefault' => $this->valuedefault,
             'date_entry' => $this->date_entry,
             'modified' => $this->modified,
-            'order' => $this->order
+            'order' => $this->order,
+            'creator' => $this->creator,
         ];
     }
 
