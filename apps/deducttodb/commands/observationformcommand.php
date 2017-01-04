@@ -71,7 +71,7 @@ class ObservationFormCommand extends BaseCommand{
 			$node->setType($localType);
 			$node->setTitle($localTitle);
 			$node->setPath($localFileName);
-			$node->setOwner();
+			$node->setOwner($owner);
 			
 			$folderName = split("/", $this->fileName);
 			if(count($folderName) >= 2){
