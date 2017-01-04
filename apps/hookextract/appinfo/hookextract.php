@@ -67,7 +67,8 @@ class Hookextract extends App {
 		$maxConf = 10;
 		$counter = 1;
 		
-		while(!empty($recurr = $iniMapper->findByNameWithDefault("conf".$counter."_recurrency", "") ) ){
+		$recurr = $iniMapper->findByNameWithDefault("conf".$counter."_recurrency", "");
+		while(!empty( $recurr ) ){
 						
 			$begin = $iniMapper->findByNameWithDefault("conf".$counter."_begin", "");
 			$begin_selection = $iniMapper->findByNameWithDefault("conf".$counter."_begin_selection", "");
@@ -116,6 +117,8 @@ class Hookextract extends App {
 			}
 			
 			$counter++;
+			
+			$recurr = $iniMapper->findByNameWithDefault("conf".$counter."_recurrency", "");
 		} 
 		
 // 		$recurr = $iniMapper->findByNameWithDefault("conf1_recurrency", "");
