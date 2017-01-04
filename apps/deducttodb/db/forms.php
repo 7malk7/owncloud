@@ -13,6 +13,8 @@ class Forms extends Entity implements JsonSerializable {
 	protected $type;
 	protected $title;
 	protected $createdat;
+	protected $owner;
+	protected $foldername;
 
 	public function jsonSerialize() {
 		return [
@@ -20,7 +22,9 @@ class Forms extends Entity implements JsonSerializable {
 				'$type' => $this->type,
 				'$path' => $this->path,
 				'$title' => $this->title,
-				'$createdat' => $this->createdat				
+				'$createdat' => $this->createdat,
+				'$owner' => $this->owner,
+				'$foldername' => $this->foldername				
 		];
 	}
 }

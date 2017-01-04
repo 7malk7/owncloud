@@ -36,15 +36,16 @@ class EntryArchiveMapper extends Mapper {
      * @param type $offset
      * @return type
      */
-    public function findByDate($datefrom, $dateto, $limit = null, $offset = null) {
-        $sql = 'select * from `*PREFIX*deduct_entry_archive`  ' .
-                ' WHERE date_entry >= "' . $datefrom .
-                '" AND date_entry <=  "' . $dateto . '"';
-        try {
-            return $this->findEntities($sql, [], $limit, $offset);
-        } catch (DoesNotExistException $exc) {
-            return null;
-        }
+    public function findByDate($datefrom, $dateto, $user, $limit=null, $offset=null){
+    	     $sql = 'select * from `*PREFIX*deduct_entry_archive`  '.
+    			' WHERE date_entry >= "'.$datefrom.
+    			'" AND date_entry <=  "'. $dateto .'" AND creator = "' . $user . '"';
+    	try{
+    		return $this->findEntities($sql, [] ,$limit, $offset);
+    	}
+    	catch(DoesNotExistException $exc) {
+    		return null;
+    	}
     }
 
     /**

@@ -99,8 +99,15 @@
 </div>
 <div id="page1">
 <p>Please select from and to date:</p>
-<p><input type="text" name="from" id="from"></input></p>
-<p><input type="text" name="to" id="to"></input></p>
+<?php 
+$startdate = strtotime("today");
+$enddate = strtotime("-1 month", $startdate);
+
+$start_string = date("Y-m-d", $startdate);
+$end_string = date("Y-m-d", $enddate);
+?>
+<p><input type="text" name="from" id="from" value="<?php echo $end_string?>"></input></p>
+<p><input type="text" name="to" id="to" value="<?php echo $start_string?>"></input></p>
 <p><button id="preselect">Make preselection</button></p>
 
 <div id="echo-result"></div>

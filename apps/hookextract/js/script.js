@@ -22,31 +22,37 @@
         show("#page1");
     	
     	var curDate = new Date();
-        var dateString = curDate.getFullYear() + "-" + ("0"+(curDate.getMonth()+1)).slice(-2) + "-" +
-        ("0" + curDate.getDate()).slice(-2);
-		$("#to").val(dateString);
+        //var dateString = curDate.getFullYear() + "-" + ("0"+(curDate.getMonth()+1)).slice(-2) + "-" +
+        //("0" + curDate.getDate()).slice(-2);
+		//$("#to").val(dateString);
 		
-		curDate.setMonth(curDate.getMonth() - 1);
+		var curDate2 = curDate.setMonth(curDate.getMonth() - 1);
 		
-		dateString = curDate.getFullYear() + "-" + ("0"+(curDate.getMonth()+1)).slice(-2) + "-" +
-		("0" + curDate.getDate()).slice(-2);
-		$("#from").val(dateString);
+		//dateString = curDate.getFullYear() + "-" + ("0"+(curDate.getMonth()+1)).slice(-2) + "-" +
+		//("0" + curDate.getDate()).slice(-2);
+		//$("#from").val(dateString);
     	
     	$('#from').datepicker({
 			selectOtherMonths: true,
+			dateFormat: 'yy-mm-dd',
+			defaultDate: '-1m',
 			minDate : -300
 		});
 		$('#to').datepicker({
 			selectOtherMonths: true,
+			dateFormat: 'yy-mm-dd',
+			defaultDate: 0,
 			minDate : -300
 		});
 		
 		$('#begin_selection').datepicker({
 			selectOtherMonths: true,
+			dateFormat: 'yy-mm-dd',
 			minDate : -300
 		});
 		$('#end_selection').datepicker({
 			selectOtherMonths: true,
+			dateFormat: 'yy-mm-dd',
 			minDate : -300
 		});
 		

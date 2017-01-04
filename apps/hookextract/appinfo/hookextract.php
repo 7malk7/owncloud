@@ -68,10 +68,24 @@ class Hookextract extends App {
 		$begin = $iniMapper->findByNameWithDefault("conf1_begin", "");
 		$begin_selection = $iniMapper->findByNameWithDefault("conf1_begin_selection", "");
 		$end_selection = $iniMapper->findByNameWithDefault("conf1_end_selection", "");
+		
+		if(!preg_match ( '/\d{4}-\d{2}-\d{2}/' , $begin_selection )){
+			$startdate = strtotime("today");
+			$begin_selection_date = strtotime($begin_selection, $startdate);			
+			$begin_selection = date("Y-m-d", $begin_selection_date);
+		}
+		
+		if(!preg_match ( '/\d{4}-\d{2}-\d{2}/' , $end_selection )){
+			$startdate = strtotime("today");
+			$end_selection_date = strtotime($end_selection, $startdate);
+			$end_selection = date("Y-m-d", $end_selection_date);
+		}
+			
+		
 		$lastrun = $iniMapper->findByNameWithDefault("conf1_lastrun", "");
 		$active = $iniMapper->findByNameWithDefault("conf1_active", "-");
+		$reqUser = $iniMapper->findByNameWithDefault("conf1_user", "");
 		
-		$today = strtotime('now');
 		$today = date_create();
 		
 		$lastrun_time = date_create($lastrun);
@@ -85,7 +99,12 @@ class Hookextract extends App {
 		
 		if( ($ddiff >= 0 || !$lastrun_time) && $active != "-"){
 			$app = $this;//new \OCA\Hookextract\AppInfo\Hookextract();
-			$app->dbGetXls("*", $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $this->userfolder, true);
+			$storage = $this->userfolder;
+			if(!$storage){
+				$storage = $this->root;
+			}
+			
+			$app->dbGetXls("*", $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $this->userfolder, true, $reqUser);
 
 			$today = date_create();
 			$today_str = $today->format('Y-m-d H:i:s');
@@ -99,7 +118,7 @@ class Hookextract extends App {
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
 	 */
-	public function dbGetXls($formtype, $datefrom, $dateto, $db, $storage, $saveOnServer ) {
+	public function dbGetXls($formtype, $datefrom, $dateto, $db, $storage, $saveOnServer , $user) {
 		$mapper = new EntryMapper($db);
 	
 		$objPHPExcel = new \PHPExcel();
@@ -109,7 +128,7 @@ class Hookextract extends App {
 		->setDescription("Extraction")
 		->setKeywords("Extraction");
 	
-		$data = $mapper->findByFormType($formtype, $datefrom, $dateto);
+		$data = $mapper->findByFormType($formtype, $datefrom, $dateto, $user);
 	
 		$headers = [];
 		$output = [];
@@ -127,7 +146,7 @@ class Hookextract extends App {
 		}
 		
 		$archiveMapper = new EntryArchiveMapper($db);
-		$data_arch = $archiveMapper->findByDate($datefrom, $dateto);
+		$data_arch = $archiveMapper->findByDate($datefrom, $dateto, $user);
 		
 		foreach ($data_arch as $line) {
 			if (!$headers[$line->getKey()]) {
@@ -194,10 +213,20 @@ class Hookextract extends App {
 		return $content;
 	}
 
+	/**
+	 * Simply method that posts back the payload of the request
+	 * @NoAdminRequired
+	 * @NoCSRFRequired
+	 */
 	public function initFiles($folder){
 		
 	}
 
+	/**
+	 * Simply method that posts back the payload of the request
+	 * @NoAdminRequired
+	 * @NoCSRFRequired
+	 */
 	public function initialization(){
 		 
 		

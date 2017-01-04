@@ -71,6 +71,13 @@ class ObservationFormCommand extends BaseCommand{
 			$node->setType($localType);
 			$node->setTitle($localTitle);
 			$node->setPath($localFileName);
+			$node->setOwner();
+			
+			$folderName = split("/", $this->fileName);
+			if(count($folderName) >= 2){
+				$node->setFoldername($folderName[1]);
+			}
+			
 			
 			if($newRecord){
 				$formsMapper->insert($node);
