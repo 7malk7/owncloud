@@ -47,7 +47,7 @@ class Hookextract extends App {
 			return new XmlFactory( $c->query ( 'RootStorage' ) );
 		} );
 		
-		$this->runJob();
+		//$this->runJob();
 
 	}
 	
@@ -62,54 +62,109 @@ class Hookextract extends App {
 	public function runJob(){
 		
 		$iniMapper = new \OCA\DeductToDB\Db\paramsMapper($this->getContainer()->getServer()->getDb());
+		$confParam = "conf";
 		
-		$recurr = $iniMapper->findByNameWithDefault("conf1_recurrency", "");
+		$maxConf = 10;
+		$counter = 1;
 		
-		$begin = $iniMapper->findByNameWithDefault("conf1_begin", "");
-		$begin_selection = $iniMapper->findByNameWithDefault("conf1_begin_selection", "");
-		$end_selection = $iniMapper->findByNameWithDefault("conf1_end_selection", "");
-		
-		if(!preg_match ( '/\d{4}-\d{2}-\d{2}/' , $begin_selection )){
-			$startdate = strtotime("today");
-			$begin_selection_date = strtotime($begin_selection, $startdate);			
-			$begin_selection = date("Y-m-d", $begin_selection_date);
-		}
-		
-		if(!preg_match ( '/\d{4}-\d{2}-\d{2}/' , $end_selection )){
-			$startdate = strtotime("today");
-			$end_selection_date = strtotime($end_selection, $startdate);
-			$end_selection = date("Y-m-d", $end_selection_date);
-		}
+		while(!empty($recurr = $iniMapper->findByNameWithDefault("conf".$counter."_recurrency", "") ) ){
+						
+			$begin = $iniMapper->findByNameWithDefault("conf".$counter."_begin", "");
+			$begin_selection = $iniMapper->findByNameWithDefault("conf".$counter."_begin_selection", "");
+			$end_selection = $iniMapper->findByNameWithDefault("conf".$counter."_end_selection", "");
 			
-		
-		$lastrun = $iniMapper->findByNameWithDefault("conf1_lastrun", "");
-		$active = $iniMapper->findByNameWithDefault("conf1_active", "-");
-		$reqUser = $iniMapper->findByNameWithDefault("conf1_user", "");
-		
-		$today = date_create();
-		
-		$lastrun_time = date_create($lastrun);
-		
-		if($lastrun_time)
-		{
-			$interval = date_diff($today, $lastrun_time);
-		
-			$ddiff = $interval->format("%a");
-		}
-		
-		if( ($ddiff >= 0 || !$lastrun_time) && $active != "-"){
-			$app = $this;//new \OCA\Hookextract\AppInfo\Hookextract();
-			$storage = $this->userfolder;
-			if(!$storage){
-				$storage = $this->root;
+			if(!preg_match ( '/\d{4}-\d{2}-\d{2}/' , $begin_selection )){
+				$startdate = strtotime("today");
+				$begin_selection_date = strtotime($begin_selection, $startdate);
+				$begin_selection = date("Y-m-d", $begin_selection_date);
 			}
 			
-			$app->dbGetXls("*", $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $this->userfolder, true, $reqUser);
-
+			if(!preg_match ( '/\d{4}-\d{2}-\d{2}/' , $end_selection )){
+				$startdate = strtotime("today");
+				$end_selection_date = strtotime($end_selection, $startdate);
+				$end_selection = date("Y-m-d", $end_selection_date);
+			}
+				
+			
+			$lastrun = $iniMapper->findByNameWithDefault("conf".$counter."_lastrun", "");
+			$active = $iniMapper->findByNameWithDefault("conf".$counter."_active", "-");
+			$reqUser = $iniMapper->findByNameWithDefault("conf".$counter."_user", "");
+			
 			$today = date_create();
-			$today_str = $today->format('Y-m-d H:i:s');
-			$iniMapper->setByName("conf1_lastrun", $today_str);
-		}
+			
+			$lastrun_time = date_create($lastrun);
+			
+			if($lastrun_time)
+			{
+				$interval = date_diff($today, $lastrun_time);
+			
+				$ddiff = $interval->format("%a");
+			}
+			
+			if( ($ddiff >= 1 || !$lastrun_time) && $active != "-"){
+				$app = $this;//new \OCA\Hookextract\AppInfo\Hookextract();
+				$storage = $this->userfolder;
+				if(!$storage){
+					$storage = $this->root;
+				}
+					
+				$app->dbGetXls("*", $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $storage, true, $reqUser);
+			
+				$today = date_create();
+				$today_str = $today->format('Y-m-d H:i:s');
+				$iniMapper->setByName("conf".$counter."_lastrun", $today_str);
+			}
+			
+			$counter++;
+		} 
+		
+// 		$recurr = $iniMapper->findByNameWithDefault("conf1_recurrency", "");
+		
+// 		$begin = $iniMapper->findByNameWithDefault("conf1_begin", "");
+// 		$begin_selection = $iniMapper->findByNameWithDefault("conf1_begin_selection", "");
+// 		$end_selection = $iniMapper->findByNameWithDefault("conf1_end_selection", "");
+		
+// 		if(!preg_match ( '/\d{4}-\d{2}-\d{2}/' , $begin_selection )){
+// 			$startdate = strtotime("today");
+// 			$begin_selection_date = strtotime($begin_selection, $startdate);			
+// 			$begin_selection = date("Y-m-d", $begin_selection_date);
+// 		}
+		
+// 		if(!preg_match ( '/\d{4}-\d{2}-\d{2}/' , $end_selection )){
+// 			$startdate = strtotime("today");
+// 			$end_selection_date = strtotime($end_selection, $startdate);
+// 			$end_selection = date("Y-m-d", $end_selection_date);
+// 		}
+			
+		
+// 		$lastrun = $iniMapper->findByNameWithDefault("conf1_lastrun", "");
+// 		$active = $iniMapper->findByNameWithDefault("conf1_active", "-");
+// 		$reqUser = $iniMapper->findByNameWithDefault("conf1_user", "");
+		
+// 		$today = date_create();
+		
+// 		$lastrun_time = date_create($lastrun);
+		
+// 		if($lastrun_time)
+// 		{
+// 			$interval = date_diff($today, $lastrun_time);
+		
+// 			$ddiff = $interval->format("%a");
+// 		}
+		
+// 		if( ($ddiff >= 0 || !$lastrun_time) && $active != "-"){
+// 			$app = $this;//new \OCA\Hookextract\AppInfo\Hookextract();
+// 			$storage = $this->userfolder;
+// 			if(!$storage){
+// 				$storage = $this->root;
+// 			}
+			
+// 			$app->dbGetXls("*", $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $storage, true, $reqUser);
+
+// 			$today = date_create();
+// 			$today_str = $today->format('Y-m-d H:i:s');
+// 			$iniMapper->setByName("conf1_lastrun", $today_str);
+// 		}
 		
 	}
 	

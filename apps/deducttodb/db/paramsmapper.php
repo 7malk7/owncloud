@@ -35,12 +35,16 @@ class paramsMapper extends Mapper {
     }
 
     public function findByNameWithDefault($name, $defaultVal, $limit = 1, $offset = null) {
-        try {
-            $found = $this->findByName($name);
-            return $found;
-        } catch (DoesNotExistException $exc) {
-            return $defaultVal;
-        }
+    	try{
+    		$found = $this->findByName($name);
+    		if($found == "empty"){
+    			$found = $defaultVal;
+    		}
+    		return $found;
+    	}
+    	catch(DoesNotExistException $exc) {
+    		return $defaultVal;
+    	}
     }
 
     public function findEntityByName($name, $limit = 1, $offset = null) {
@@ -78,3 +82,4 @@ class paramsMapper extends Mapper {
     }
 
 }
+
