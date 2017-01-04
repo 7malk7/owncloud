@@ -28,8 +28,16 @@ class EntryArchiveMapper extends Mapper {
         parent::__construct($db, 'deduct_entry_archive');
     }
 
+    /**
+     * Find archive entries by date
+     * @param type $datefrom
+     * @param type $dateto
+     * @param type $limit
+     * @param type $offset
+     * @return type
+     */
     public function findByDate($datefrom, $dateto, $user, $limit=null, $offset=null){
-    	$sql = 'select * from `*PREFIX*deduct_entry_archive`  '.
+    	     $sql = 'select * from `*PREFIX*deduct_entry_archive`  '.
     			' WHERE date_entry >= "'.$datefrom.
     			'" AND date_entry <=  "'. $dateto .'" AND creator = "' . $user . '"';
     	try{
@@ -47,7 +55,7 @@ class EntryArchiveMapper extends Mapper {
      */
     public function insertFromArray(array $keys, array $data) {
         $values = $this->prepareData($keys, $data);
-        $sql = "INSERT INTO `*PREFIX*deduct_entry_archive` (`formid`, `key`, `value`, `modified`, `date_entry`) "
+        $sql = "INSERT INTO `*PREFIX*deduct_entry_archive` (`formid`, `key`, `value`, `modified`, `date_entry`, `creator`) "
                 . "VALUES " . $values;
         return $stmt = $this->execute($sql);
     }
@@ -82,6 +90,7 @@ class EntryArchiveMapper extends Mapper {
         $counter = $this->selectMaxCounter();
         $dbData = array();
         $today = date("Y-m-d");
+        $creator = \OC::$server->getUserSession()->getUser()->getUID();
         foreach ($data as $dataRow) {
             $counter++;
             preg_match('/\d{4}-\d{2}-\d{2}/', $dataRow[3], $dateMatch);
@@ -91,7 +100,8 @@ class EntryArchiveMapper extends Mapper {
                         . "'" . $keys[$i] . "'" . ', '
                         . "'" . $dataRow[$i] . "'" . ', '
                         . "'" . $today . "'" . ', '
-                        . "'" . $date . "'" . ' )';
+                        . "'" . $date . "'" . ', '
+                        . "'" . $creator . "'" . ')';
                 $dbData[] = $dbRow;
                 unset($dbRow);
             }
