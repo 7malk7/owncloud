@@ -18,6 +18,8 @@ require_once __DIR__ . '/autoload.php';
 $app = new Hookextract($_REQUEST);
 $container = $app->getContainer();
 
+\OCP\Backgroundjob::addRegularTask('\OCA\HookExtract\Cron\ExtractTask', 'run');
+
 // $rootFolder = $container->getRootFolder();
 // $userFolder = $container->getUserFolder();
 // $appFolder = $container->getAppFolder();
