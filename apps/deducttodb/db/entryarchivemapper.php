@@ -28,10 +28,10 @@ class EntryArchiveMapper extends Mapper {
         parent::__construct($db, 'deduct_entry_archive');
     }
 
-    public function findByDate($datefrom, $dateto, $limit=null, $offset=null){
+    public function findByDate($datefrom, $dateto, $user, $limit=null, $offset=null){
     	$sql = 'select * from `*PREFIX*deduct_entry_archive`  '.
     			' WHERE date_entry >= "'.$datefrom.
-    			'" AND date_entry <=  "'. $dateto .'"';
+    			'" AND date_entry <=  "'. $dateto .'" AND creator = "' . $user . '"';
     	try{
     		return $this->findEntities($sql, [] ,$limit, $offset);
     	}

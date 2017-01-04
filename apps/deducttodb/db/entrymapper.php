@@ -37,18 +37,20 @@ class EntryMapper extends Mapper {
         }
     }
 
-    public function findByFormType($formtype, $datefrom, $dateto, $limit = null, $offset = null) {
+    public function findByFormType($formtype, $datefrom, $dateto, $user, $limit = null, $offset = null) {
     	$sql = "";
     	if($formtype == "*")
     	{
     		$sql = 'select `*PREFIX*deduct_entry`.* from `*PREFIX*deduct_entry` inner join `*PREFIX*deduct_forms` ' .
-    				'  on `*PREFIX*deduct_entry`.formid = `*PREFIX*deduct_forms`.id ' .
+    	'  on `*PREFIX*deduct_entry`.formid = `*PREFIX*deduct_forms`.id  and `*PREFIX*deduct_forms`.foldername = "'.
+    						$user .'"' .
     				'  and `*PREFIX*deduct_forms`.createdat >= "' . $datefrom .
     				'" AND `*PREFIX*deduct_forms`.createdat <=  "' . $dateto . '"';
     	}
     	else{
         	$sql = 'select `*PREFIX*deduct_entry`.* from `*PREFIX*deduct_entry` inner join `*PREFIX*deduct_forms` ' .
-                '  on `*PREFIX*deduct_entry`.formid = `*PREFIX*deduct_forms`.id ' .
+        '  on `*PREFIX*deduct_entry`.formid = `*PREFIX*deduct_forms`.id  and `*PREFIX*deduct_forms`.foldername = "'. 
+       						 $user .'"' .
                 ' and `*PREFIX*deduct_forms`.type = "' . $formtype . '" and `*PREFIX*deduct_forms`.createdat >= "' . $datefrom .
                 '" AND `*PREFIX*deduct_forms`.createdat <=  "' . $dateto . '"';
     	}

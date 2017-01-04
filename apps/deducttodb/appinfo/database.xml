@@ -355,6 +355,18 @@
 				<type>date</type>
 				<notnull>true</notnull>
 			</field>
+			<field>
+				<name>owner</name>
+				<type>text</type>
+				<notnull>false</notnull>
+				<length>40</length>
+			</field>
+			<field>
+				<name>foldername</name>
+				<type>text</type>
+				<notnull>true</notnull>
+				<length>50</length>
+			</field>
 			<index>
 				<name>index1</name>
 				<field>
