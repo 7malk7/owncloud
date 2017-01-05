@@ -100,7 +100,7 @@ class PageController extends Controller {
         $today = date_create();
         $today_str = $today->format('YmdHis');
 
-        return new FileResponse($today_str . '.xls', 'application/xml', $content);
+        return new FileResponse($today_str . '.xlsx', 'application/xml', $content);
     }
 
     /**
@@ -277,7 +277,6 @@ class PageController extends Controller {
                     $inputFileType = \PHPExcel_IOFactory::identify($inputFile);
                     $objReader = \PHPExcel_IOFactory::createReader($inputFileType);
                     $objPHPExcel = $objReader->load($inputFile);
-                    //$objPHPExcel = \PHPExcel_IOFactory::load($inputFile);
                 } catch (Exception $ex) {
                     echo $ex->getMessage();
                 }
