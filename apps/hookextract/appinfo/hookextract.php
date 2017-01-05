@@ -136,7 +136,8 @@ class Hookextract extends App {
         $this->parseData($data_arch, $headers, $output);
         $keys = array_keys($headers);
         
-        $content = $this->exportToNewFile($output, $keys);
+        //$content = $this->exportToNewFile($output, $keys);
+        $this->exportToServer($formtype, $datefrom, $dateto, $db, $storage, $user);
 
 //        if ($saveOnServer) {
 //            $iniMapper = new paramsMapper($db);
@@ -200,17 +201,18 @@ class Hookextract extends App {
         $iniMapper = new paramsMapper($db);
         $today = date_create();
         $today_str = $today->format('YmdHis');
-        $fileName = $iniMapper->findByNameWithDefault("saveFilename", $today_str . '.xlsx');
+        //$fileName = $iniMapper->findByNameWithDefault("saveFilename", $today_str . '.xlsx');
+        $fileName = 'test.xlsx';
 
         // check if file exists and write to it if possible
         try {
             try {
                 $file = $storage->get($fileName);
-                $content = $this->writeToExistingFile($fileName, $output);
+                $content = $this->exportToExistingFile($file->getPath(), $output);
             } catch (\OCP\Files\NotFoundException $e) {
                 $file = $storage->newFile($fileName);
                 $keys = array_keys($headers);
-                $content = $this->writeToNewFile($output, $keys);
+                $content = $this->exportToNewFile($output, $keys);
             }
             // the id can be accessed by $file->getId();
             $file->putContent($content);
@@ -263,7 +265,6 @@ class Hookextract extends App {
      * @param string $fileName
      * @param array $output
      * @return type $content
-     * @throws StorageException
      */
     private function exportToExistingFile($fileName, $output) {
         try {
