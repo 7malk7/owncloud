@@ -185,7 +185,7 @@ class Hookextract extends App {
         }
     }
 
-    public function exportToServer($formtype, $datefrom, $dateto, $db, $storage, $user) {
+    public function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $user) {
         $headers = [];
         $output = [];
 
@@ -201,16 +201,20 @@ class Hookextract extends App {
         $iniMapper = new paramsMapper($db);
         $today = date_create();
         $today_str = $today->format('YmdHis');
-        //$fileName = $iniMapper->findByNameWithDefault("saveFilename", $today_str . '.xlsx');
-        $fileName = 'test.xlsx';
+        $fileName = $iniMapper->findByNameWithDefault("saveFilename", $today_str . '.xlsx');
+        //$filename = 'test.xlsx';
 
         // check if file exists and write to it if possible
         try {
             try {
-                $file = $storage->get($fileName);
-                $content = $this->exportToExistingFile($file->getPath(), $output);
+                $file = $folder->get($fileName);
+                $storage = $file->getStorage();
+                $filepath = $file->getInternalPath();
+                $path = 'mytest.xlsx';
+                file_put_contents($path, $storage->file_get_contents($filepath));
+                $content = $this->exportToExistingFile($fileName, $output);
             } catch (\OCP\Files\NotFoundException $e) {
-                $file = $storage->newFile($fileName);
+                $file = $folder->newFile($fileName);
                 $keys = array_keys($headers);
                 $content = $this->exportToNewFile($output, $keys);
             }
@@ -268,18 +272,17 @@ class Hookextract extends App {
      */
     private function exportToExistingFile($fileName, $output) {
         try {
-            $fileType = \PHPExcel_IOFactory::identify($fileName);
-            $objReader = \PHPExcel_IOFactory::createReader($fileType);
+            $objReader = \PHPExcel_IOFactory::createReader('Excel2007');
             $objPHPExcel = $objReader->load($fileName);
         } catch (Exception $ex) {
             echo $ex->getMessage();
         }
 
         $objWorksheet = $objPHPExcel->setActiveSheetIndex(0);
-        $highestRow = $objWorksheet->getHighestRow();
-        $objWorksheet->fromArray($output, null, 'A' . $highestRow);
+        $startRow = (int) $objWorksheet->getHighestRow() + 1;
+        $objWorksheet->fromArray($output, null, 'A' . $startRow);
 
-        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, $fileType);
+        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
         ob_start();
         $objWriter->save('php://output');
         $content = ob_get_clean();
