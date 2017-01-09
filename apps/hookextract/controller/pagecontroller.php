@@ -95,7 +95,7 @@ class PageController extends Controller {
      */
     public function xlsdwnl($formtype, $datefrom, $dateto) {
         $app = new \OCA\Hookextract\AppInfo\Hookextract();
-        $content = $app->dbGetXls($formtype, $datefrom, $dateto, $this->db, $this->app->getUserFolder(), false);
+        $content = $app->dbGetXls($formtype, $datefrom, $dateto, $this->db);
 
         $today = date_create();
         $today_str = $today->format('YmdHis');
