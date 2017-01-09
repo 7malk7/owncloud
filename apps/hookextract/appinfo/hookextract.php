@@ -57,7 +57,6 @@ class Hookextract extends App {
     }
 
     public function runJob() {
-
         $iniMapper = new \OCA\DeductToDB\Db\paramsMapper($this->getContainer()->getServer()->getDb());
         $confParam = "conf";
 
@@ -94,7 +93,6 @@ class Hookextract extends App {
 
             if ($lastrun_time) {
                 $interval = date_diff($today, $lastrun_time);
-
                 $ddiff = $interval->format("%a");
             }
 
@@ -105,7 +103,7 @@ class Hookextract extends App {
                     $storage = $this->root;
                 }
 
-                $app->dbGetXls("*", $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $storage, true, $reqUser);
+                $app->exportToServer("*", $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $storage, $reqUser);
 
                 $today = date_create();
                 $today_str = $today->format('Y-m-d H:i:s');
@@ -123,7 +121,7 @@ class Hookextract extends App {
      * @NoAdminRequired
      * @NoCSRFRequired
      */
-    public function dbGetXls($formtype, $datefrom, $dateto, $db, $storage, $saveOnServer, $user) {
+    public function dbGetXls($formtype, $datefrom, $dateto, $db, $user) {
         $headers = [];
         $output = [];
 
@@ -136,31 +134,7 @@ class Hookextract extends App {
         $this->parseData($data_arch, $headers, $output);
         $keys = array_keys($headers);
         
-        //$content = $this->exportToNewFile($output, $keys);
-        $this->exportToServer($formtype, $datefrom, $dateto, $db, $storage, $user);
-
-//        if ($saveOnServer) {
-//            $iniMapper = new paramsMapper($db);
-//
-//            $today = date_create();
-//            $today_str = $today->format('YmdHis');
-//
-//            $fileName = $iniMapper->findByNameWithDefault("saveFilename", $today_str . '.xlsx');
-//
-//            // check if file exists and write to it if possible
-//            try {
-//                try {
-//                    $file = $storage->get($fileName);
-//                } catch (\OCP\Files\NotFoundException $e) {
-//                    $file = $storage->newFile($fileName);
-//                }
-//                // the id can be accessed by $file->getId();
-//                $file->putContent($content);
-//            } catch (\OCP\Files\NotPermittedException $e) {
-//                // you have to create this exception by yourself ;)
-//                throw new StorageException("Can't write to file");
-//            }
-//        }
+        $content = $this->exportToNewFile($output, $keys);
 
         return $content;
     }
@@ -185,7 +159,17 @@ class Hookextract extends App {
         }
     }
 
-    public function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $user) {
+    /**
+     * Export data to an Excel file on server
+     * @param type $formtype
+     * @param type $datefrom
+     * @param type $dateto
+     * @param type $db
+     * @param type $folder
+     * @param type $user
+     * @throws StorageException
+     */
+    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $user) {
         $headers = [];
         $output = [];
 
@@ -202,7 +186,6 @@ class Hookextract extends App {
         $today = date_create();
         $today_str = $today->format('YmdHis');
         $fileName = $iniMapper->findByNameWithDefault("saveFilename", $today_str . '.xlsx');
-        //$filename = 'test.xlsx';
 
         // check if file exists and write to it if possible
         try {
@@ -210,8 +193,7 @@ class Hookextract extends App {
                 $file = $folder->get($fileName);
                 $storage = $file->getStorage();
                 $filepath = $file->getInternalPath();
-                $path = 'mytest.xlsx';
-                file_put_contents($path, $storage->file_get_contents($filepath));
+                file_put_contents($fileName, $storage->file_get_contents($filepath));
                 $content = $this->exportToExistingFile($fileName, $output);
             } catch (\OCP\Files\NotFoundException $e) {
                 $file = $folder->newFile($fileName);
@@ -227,7 +209,7 @@ class Hookextract extends App {
     }
 
     /**
-     * Export data to a new file
+     * Export data to a new Excel file
      * @param array $output
      * @param array $keys
      * @return type $content
@@ -265,7 +247,7 @@ class Hookextract extends App {
     }
 
     /**
-     * Export data to an existing excel file
+     * Export data to an existing Excel file
      * @param string $fileName
      * @param array $output
      * @return type $content
