@@ -25,8 +25,28 @@ class FilesCommand extends BaseCommand{
 		$file->setCreator($owner);
 		$stat = \OC\Files\Filesystem::stat($this->fileName);
 		
-		$file->setCreatedat(date('Y-m-d H:i:s', $stat['ctime']));
-		$file->setModified(date('Y-m-d H:i:s', $stat['mtime']));
+		$today = date_create();
+		$today_str = $today->format('Y-m-d H:i:s');
+		$ctime = date('Y-m-d H:i:s', $stat['ctime']);
+		$mtime = date('Y-m-d H:i:s', $stat['mtime']);
+		
+		if(!$ctime){
+			$ctime = $mtime;
+			if(!$ctime){
+				$ctime = $today_str;
+			}
+		}
+		
+		if(!$mtime){
+			$mtime = date('Y-m-d H:i:s', $stat['ctime']);
+			if(!$mtime){
+				$mtime = $today_str;
+			}
+			
+		}
+		
+		$file->setCreatedat($ctime);
+		$file->setModified($mtime);
 		
 		$mapper = new DeductFileMapper($app->getContainer()->getServer()->getDb());
 		$mapper->insert($file);
