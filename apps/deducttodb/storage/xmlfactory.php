@@ -80,6 +80,9 @@ class XmlFactory{
 		} catch(\OCP\Files\NotFoundException $e) {
 			throw new StorageException('File does not exist');
 		}
+		catch(\Exception $exc) {
+			
+		}
 	}
 	
 	
