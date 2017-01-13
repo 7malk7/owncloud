@@ -62,6 +62,8 @@ class Hookextract extends App {
 
         $maxConf = 10;
         $counter = 1;
+        
+        
 
         $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
         while (!empty($recurr)) {
@@ -102,8 +104,16 @@ class Hookextract extends App {
                 if (!$storage) {
                     $storage = $this->root;
                 }
+                                
+                
+                $today = date_create();
+                $today_str = $today->format('YmdHis');
+                $fileName = $iniMapper->findByNameWithDefault("conf" . $counter . "_saveFilename", $today_str . '.xlsx');
 
-                $app->exportToServer("*", $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $storage, $reqUser);
+                $formtype = $iniMapper->findByNameWithDefault("conf" . $counter . "_formtype", "*");
+                
+                $app->exportToServer($formtype, $begin_selection, $end_selection, 
+                		$this->getContainer()->getServer()->getDb(), $storage, $reqUser, $fileName);
 
                 $today = date_create();
                 $today_str = $today->format('Y-m-d H:i:s');
@@ -169,7 +179,7 @@ class Hookextract extends App {
      * @param type $user
      * @throws StorageException
      */
-    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $user) {
+    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $user, $fileName) {
         $headers = [];
         $output = [];
 
@@ -183,9 +193,7 @@ class Hookextract extends App {
 
         // server part
         $iniMapper = new paramsMapper($db);
-        $today = date_create();
-        $today_str = $today->format('YmdHis');
-        $fileName = $iniMapper->findByNameWithDefault("saveFilename", $today_str . '.xlsx');
+        
 
         // check if file exists and write to it if possible
         try {
@@ -193,9 +201,16 @@ class Hookextract extends App {
                 $file = $folder->get($fileName);
                 $storage = $file->getStorage();
                 $filepath = $file->getInternalPath();
-                file_put_contents($fileName, $storage->file_get_contents($filepath));
+                $contents = $storage->file_get_contents($filepath);
+                
+                if(strlen($contents) <= 0){
+                	throw new \OCP\Files\NotFoundException("File not found");
+                }
+                
+                file_put_contents($fileName, $contents);
                 $content = $this->exportToExistingFile($fileName, $output);
             } catch (\OCP\Files\NotFoundException $e) {
+            	unlink($fileName);
                 $file = $folder->newFile($fileName);
                 $keys = array_keys($headers);
                 $content = $this->exportToNewFile($output, $keys);
