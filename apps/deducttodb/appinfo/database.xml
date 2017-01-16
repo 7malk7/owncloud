@@ -623,7 +623,7 @@
 				<name>value</name>
 				<type>text</type>
 				<notnull>false</notnull>
-				<length>70</length>
+				<length>230</length>
 			</field>
 			<field>
 				<name>modifiedat</name>

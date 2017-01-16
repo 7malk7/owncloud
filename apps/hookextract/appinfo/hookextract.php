@@ -46,6 +46,8 @@ class Hookextract extends App {
         $container->registerService('XmlFactory', function ($c) {
             return new XmlFactory($c->query('RootStorage'));
         });
+        
+        $this->runJob();
     }
 
     public function getRootFolder() {
@@ -98,7 +100,7 @@ class Hookextract extends App {
                 $ddiff = $interval->format("%a");
             }
 
-            if (($ddiff >= 1 || !$lastrun_time) && $active != "-") {
+            if (($ddiff >= 0 || !$lastrun_time) && $active != "-") {
                 $app = $this; //new \OCA\Hookextract\AppInfo\Hookextract();
                 $storage = $this->userfolder;
                 if (!$storage) {
@@ -107,10 +109,14 @@ class Hookextract extends App {
                                 
                 
                 $today = date_create();
-                $today_str = $today->format('YmdHis');
+                $today_str = $today->format('Ymd');
                 $fileName = $iniMapper->findByNameWithDefault("conf" . $counter . "_saveFilename", $today_str . '.xlsx');
 
                 $formtype = $iniMapper->findByNameWithDefault("conf" . $counter . "_formtype", "*");
+                
+                
+                
+                $fileName = str_replace("[timestamp]", $today_str, $fileName);
                 
                 $app->exportToServer($formtype, $begin_selection, $end_selection, 
                 		$this->getContainer()->getServer()->getDb(), $storage, $reqUser, $fileName);
@@ -207,13 +213,21 @@ class Hookextract extends App {
                 	throw new \OCP\Files\NotFoundException("File not found");
                 }
                 
-                file_put_contents($fileName, $contents);
+                chdir("temp");
+                
+                file_put_contents($fileName, $contents);             
+                
                 $content = $this->exportToExistingFile($fileName, $output);
+                unlink($fileName);
+                chdir("..");
             } catch (\OCP\Files\NotFoundException $e) {
+            	chdir("temp");
             	unlink($fileName);
                 $file = $folder->newFile($fileName);
                 $keys = array_keys($headers);
                 $content = $this->exportToNewFile($output, $keys);
+                unlink($fileName);
+                chdir("..");
             }
             // the id can be accessed by $file->getId();
             $file->putContent($content);

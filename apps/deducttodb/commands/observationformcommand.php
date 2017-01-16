@@ -66,12 +66,15 @@ class ObservationFormCommand extends BaseCommand{
 			$observationNode = $observation->findByUuid($uuid);
 			if($observationNode){
 				$node->setOnodeid($observationNode->getId());
+				$node->setOwner($observationNode->getCreatedby());
+			}else{
+				$node->setOwner($owner);
 			}
 			
 			$node->setType($localType);
 			$node->setTitle($localTitle);
 			$node->setPath($localFileName);
-			$node->setOwner($owner);
+			
 			
 			$folderName = split("/", $this->fileName);
 			if(count($folderName) >= 2){
