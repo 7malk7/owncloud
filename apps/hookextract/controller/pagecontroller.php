@@ -292,7 +292,13 @@ class PageController extends Controller {
                 $errors = array_filter($data[0]);
                 if (empty($errors) == false) {
                     $mapper = new EntryArchiveMapper($this->db);
-                    $insertFlag = $mapper->insertFromArray($keys[0], $data);
+                    $inserted = $mapper->insertFromArray($keys[0], $data);
+                    if ($inserted) {
+                        $insertFlag = count($data);
+                    }
+                    else {
+                        $insertFlag = -1;
+                    }
                 } else {
                     $insertFlag = -1;
                 }
