@@ -367,6 +367,12 @@
 				<notnull>true</notnull>
 				<length>50</length>
 			</field>
+			<field>
+				<name>uuid</name>
+				<type>text</type>
+				<notnull>false</notnull>
+				<length>36</length>
+			</field>			
 			<index>
 				<name>index1</name>
 				<field>

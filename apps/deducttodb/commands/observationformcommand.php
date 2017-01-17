@@ -56,7 +56,7 @@ class ObservationFormCommand extends BaseCommand{
 				$newRecord = true;
 			}
 			
-			
+			$node->setUuid($uuid);
 			$node->setCreatedat((string)$this->xml->created_at);
 			
 			$localTitle = (string)$this->xml->title;
