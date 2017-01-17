@@ -27,11 +27,21 @@ class paramsMapper extends Mapper {
     public function findByName($name, $limit = 1, $offset = null) {
         $sql = 'select * from `*PREFIX*deduct_params`  ' .
                 ' WHERE name =  "' . $name . '"';
-        $entity = $this->findEntities($sql, [], $limit, $offset);
+        $entity = $this->findEntities($sql, []);
         if (!$entity) {
             throw new DoesNotExistException('No Entry found');
         }
         return $entity[0]->getValue();
+    }
+    
+    public function findManyByName($name, $limit = 1, $offset = null) {
+    	$sql = 'select * from `*PREFIX*deduct_params`  ' .
+    			' WHERE name =  "' . $name . '"';
+    	$entities = $this->findEntities($sql, []);
+    	if (!$entities) {
+    		throw new DoesNotExistException('No Entry found');
+    	}
+    	return $entities;
     }
 
     public function findByNameWithDefault($name, $defaultVal, $limit = 1, $offset = null) {

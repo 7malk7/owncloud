@@ -47,7 +47,7 @@ class Hookextract extends App {
             return new XmlFactory($c->query('RootStorage'));
         });
         
-        //$this->runJob();
+        $this->runJob();
     }
 
     public function getRootFolder() {
@@ -89,7 +89,7 @@ class Hookextract extends App {
 
             $lastrun = $iniMapper->findByNameWithDefault("conf" . $counter . "_lastrun", "");
             $active = $iniMapper->findByNameWithDefault("conf" . $counter . "_active", "-");
-            $reqUser = $iniMapper->findByNameWithDefault("conf" . $counter . "_user", "");
+            $reqUsers = $iniMapper->findManyByName("conf" . $counter . "_user");
 
             $today = date_create();
 
@@ -119,7 +119,7 @@ class Hookextract extends App {
                 $fileName = str_replace("[timestamp]", $today_str, $fileName);
                 
                 $app->exportToServer($formtype, $begin_selection, $end_selection, 
-                		$this->getContainer()->getServer()->getDb(), $storage, $reqUser, $fileName);
+                		$this->getContainer()->getServer()->getDb(), $storage, $reqUsers, $fileName);
 
                 $today = date_create();
                 $today_str = $today->format('Y-m-d H:i:s');
@@ -185,16 +185,28 @@ class Hookextract extends App {
      * @param type $user
      * @throws StorageException
      */
-    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $user, $fileName) {
+    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $users, $fileName) {
         $headers = [];
         $output = [];
+        
+        foreach ($users as $user) {
 
-        $mapper = new EntryMapper($db);
-        $data = $mapper->findByFormType($formtype, $datefrom, $dateto, $user);
+          $mapper = new EntryMapper($db);
+          $data1 = $mapper->findByFormType($formtype, $datefrom, $dateto, $user->getValue());
+          foreach($data1 as $line1){
+          	$data[] = $line1;
+          }
+          //$data = array_merge($data, $data1);
+
+          $archiveMapper = new EntryArchiveMapper($db);
+          $data_arch1 = $archiveMapper->findByDate($datefrom, $dateto, $user->getValue());
+          foreach($data_arch1 as $arch_line1){
+          	$data_arch[] = $arch_line1;
+          }
+          //$data_arch = array_merge($data_arch, $data_arch1);
+        }
+        
         $this->parseData($data, $headers, $output);
-
-        $archiveMapper = new EntryArchiveMapper($db);
-        $data_arch = $archiveMapper->findByDate($datefrom, $dateto, $user);
         $this->parseData($data_arch, $headers, $output);
 
         // server part

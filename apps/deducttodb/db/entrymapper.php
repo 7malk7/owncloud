@@ -41,16 +41,31 @@ class EntryMapper extends Mapper {
     	$sql = "";
     	if($formtype == "*")
     	{
-    		$sql = 'select `*PREFIX*deduct_entry`.* from `*PREFIX*deduct_entry` inner join `*PREFIX*deduct_forms` ' .
-    	'  on `*PREFIX*deduct_entry`.formid = `*PREFIX*deduct_forms`.id ' .
-    				'  and `*PREFIX*deduct_forms`.createdat >= "' . $datefrom .
-    				'" AND `*PREFIX*deduct_forms`.createdat <=  "' . $dateto . '"';
+    		$sql = 'select `*PREFIX*deduct_entry`.* from `*PREFIX*deduct_entry` '.
+    				'inner join `*PREFIX*deduct_forms` on `*PREFIX*deduct_entry`.formid = `*PREFIX*deduct_forms`.id and '.
+    				' '.
+    				' `*PREFIX*deduct_forms`.createdat >= "'. $datefrom .'" AND '.
+    				'`*PREFIX*deduct_forms`.createdat <= "'. $dateto .'" inner ' .
+    				' join `*PREFIX*deduct_observation_node` on `*PREFIX*deduct_observation_node`.uuid = `*PREFIX*deduct_forms`.`uuid`'.
+    				' and `*PREFIX*deduct_observation_node`.createdby = "' . $user . '"';
+//     		$sql = 'select `*PREFIX*deduct_entry`.* from `*PREFIX*deduct_entry` inner join `*PREFIX*deduct_forms` ' .
+//     	'  on `*PREFIX*deduct_entry`.formid = `*PREFIX*deduct_forms`.id ' .
+//     				'  and `*PREFIX*deduct_forms`.createdat >= "' . $datefrom .
+//     				'" AND `*PREFIX*deduct_forms`.createdat <=  "' . $dateto . '"';
     	}
     	else{
-        	$sql = 'select `*PREFIX*deduct_entry`.* from `*PREFIX*deduct_entry` inner join `*PREFIX*deduct_forms` ' .
-        '  on `*PREFIX*deduct_entry`.formid = `*PREFIX*deduct_forms`.id ' .
-                ' and `*PREFIX*deduct_forms`.type = "' . $formtype . '" and `*PREFIX*deduct_forms`.createdat >= "' . $datefrom .
-                '" AND `*PREFIX*deduct_forms`.createdat <=  "' . $dateto . '"';
+//         	$sql = 'select `*PREFIX*deduct_entry`.* from `*PREFIX*deduct_entry` inner join `*PREFIX*deduct_forms` ' .
+//         '  on `*PREFIX*deduct_entry`.formid = `*PREFIX*deduct_forms`.id ' .
+//                 ' and `*PREFIX*deduct_forms`.type = "' . $formtype . '" and `*PREFIX*deduct_forms`.createdat >= "' . $datefrom .
+//                 '" AND `*PREFIX*deduct_forms`.createdat <=  "' . $dateto . '"';
+
+    		$sql = 'select `*PREFIX*deduct_entry`.* from `*PREFIX*deduct_entry` '.
+    				'inner join `*PREFIX*deduct_forms` on `*PREFIX*deduct_entry`.formid = `*PREFIX*deduct_forms`.id and '.
+    				'`*PREFIX*deduct_forms`.type = "' . $formtype . '" and '.
+    				' `*PREFIX*deduct_forms`.createdat >= "'. $datefrom .'" AND '.
+    				'`*PREFIX*deduct_forms`.createdat <= "'. $dateto .'" inner ' .
+    				' join `*PREFIX*deduct_observation_node` on `*PREFIX*deduct_observation_node`.uuid = `*PREFIX*deduct_forms`.`uuid`'.
+    				' and `*PREFIX*deduct_observation_node`.createdby = "' . $user . '"';
     	}
     	
         try {
