@@ -154,8 +154,7 @@ class Hookextract extends App {
         $this->parseData($data_arch, $headers, $output);
         $keys = array_keys($headers);
 
-        //$content = $this->exportToNewFile($output, $keys);
-        $content = $this->exportToExistingFile("test.xlsx", $output);
+        $content = $this->exportToNewFile($output, $keys);
 
         return $content;
     }
