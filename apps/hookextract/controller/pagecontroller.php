@@ -25,8 +25,11 @@ use OCA\Deducttodb\Db\paramsMapper;
 use OCA\HookExtract\AppInfo\Hookextract;
 use OCA\DeductToDB\Storage\StorageException;
 use OCA\HookExtract\Http\FileResponse;
+use Box\Spout\Reader\ReaderFactory;
+use Box\Spout\Common\Type;
 
 require_once "phpexcel/Classes/PHPExcel.php";
+require_once "spout/Autoloader/autoload.php";
 
 class PageController extends Controller {
 
@@ -176,7 +179,7 @@ class PageController extends Controller {
                 if (!$headers[$line->getKey()]) {
                     $headers[$line->getKey()] = [];
                 }
-                
+
                 if (!$output[$line->getFormid()]) {
                     $output[$line->getFormid()] = [$line->getKey() => $line->getValue()];
                 } else {
@@ -273,30 +276,39 @@ class PageController extends Controller {
         if (isset($_FILES['filepath'])) {
             if ($_FILES['filepath']['tmp_name'] && !$_FILES['filepath']['error']) {
                 $inputFile = $_FILES['filepath']['tmp_name'];
-                try {
-                    $inputFileType = \PHPExcel_IOFactory::identify($inputFile);
-                    $objReader = \PHPExcel_IOFactory::createReader($inputFileType);
-                    $objPHPExcel = $objReader->load($inputFile);
-                } catch (Exception $ex) {
-                    echo $ex->getMessage();
+//                try {
+//                    $inputFileType = \PHPExcel_IOFactory::identify($inputFile);
+//                    $objReader = \PHPExcel_IOFactory::createReader($inputFileType);
+//                    $objPHPExcel = $objReader->load($inputFile);
+//                } catch (Exception $ex) {
+//                    echo $ex->getMessage();
+//                }
+//
+//                $objWorksheet = $objPHPExcel->getActiveSheet();
+//                $highestRow = $objWorksheet->getHighestRow();
+//                $highestColumn = $objWorksheet->getHighestColumn();
+//
+//                $keys = $objWorksheet->rangeToArray('A1:' . $highestColumn . '1', NULL, TRUE, FALSE);
+//                $data = $objWorksheet->rangeToArray('A2:' . $highestColumn . $highestRow, NULL, TRUE, FALSE);
+
+                $reader = ReaderFactory::create(Type::XLSX);
+                $reader->setShouldFormatDates(true);
+                $reader->open($inputFile);
+                foreach ($reader->getSheetIterator() as $sheet) {
+                    foreach ($sheet->getRowIterator() as $row) {
+                        $data[] = $row;
+                    }
                 }
-
-                $objWorksheet = $objPHPExcel->getActiveSheet();
-                $highestRow = $objWorksheet->getHighestRow();
-                $highestColumn = $objWorksheet->getHighestColumn();
-
-                $keys = $objWorksheet->rangeToArray('A1:' . $highestColumn . '1', NULL, TRUE, FALSE);
-                $data = $objWorksheet->rangeToArray('A2:' . $highestColumn . $highestRow, NULL, TRUE, FALSE);
+                $keys = array_shift($data);
 
                 // if the 1st row is empty then the whole document is empty
                 $errors = array_filter($data[0]);
                 if (empty($errors) == false) {
                     $mapper = new EntryArchiveMapper($this->db);
-                    $inserted = $mapper->insertFromArray($keys[0], $data);
+                    $inserted = $mapper->insertFromArray($keys, $data);
                     if ($inserted) {
                         $insertFlag = count($data);
-                    }
-                    else {
+                    } else {
                         $insertFlag = -1;
                     }
                 } else {
