@@ -47,7 +47,7 @@ class Hookextract extends App {
             return new XmlFactory($c->query('RootStorage'));
         });
         
-        $this->runJob();
+        //$this->runJob();
     }
 
     public function getRootFolder() {
@@ -69,6 +69,7 @@ class Hookextract extends App {
 
         $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
         while (!empty($recurr)) {
+        	$label = $iniMapper->findByNameWithDefault("conf" . $counter . "_label", "");
 
             $begin = $iniMapper->findByNameWithDefault("conf" . $counter . "_begin", "");
             $begin_selection = $iniMapper->findByNameWithDefault("conf" . $counter . "_begin_selection", "");
@@ -188,6 +189,8 @@ class Hookextract extends App {
     private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $users, $fileName) {
         $headers = [];
         $output = [];
+        $data = [];
+        $data_arch = [];
         
         foreach ($users as $user) {
 
@@ -227,18 +230,23 @@ class Hookextract extends App {
                 
                 chdir("temp");
                 
-                file_put_contents($fileName, $contents);             
+                $fileNameTemp = substr(strrchr($fileName, "/"), 1);
+                if(!$fileNameTemp){
+                	$fileNameTemp = $fileName;
+                }
+                file_put_contents($fileNameTemp, $contents);             
                 
-                $content = $this->exportToExistingFile($fileName, $output);
-                unlink($fileName);
+                $content = $this->exportToExistingFile($fileNameTemp, $output);
+                unlink($fileNameTemp);
                 chdir("..");
             } catch (\OCP\Files\NotFoundException $e) {
             	chdir("temp");
-            	unlink($fileName);
-                $file = $folder->newFile($fileName);
+            	$fileNameTemp = substr(strrchr($fileName, "/"), 1);
+            	unlink($fileNameTemp);
+                $file = $folder->newFile($fileNameTemp);
                 $keys = array_keys($headers);
                 $content = $this->exportToNewFile($output, $keys);
-                unlink($fileName);
+                unlink($fileNameTemp);
                 chdir("..");
             }
             // the id can be accessed by $file->getId();
@@ -295,6 +303,9 @@ class Hookextract extends App {
      */
     private function exportToExistingFile($fileName, $output) {
         try {
+        	$cacheMethod = \PHPExcel_CachedObjectStorageFactory::cache_to_phpTemp;
+        	$cacheSettings = array('memoryCacheSize' => '256MB');
+        	\PHPExcel_Settings::setCacheStorageMethod($cacheMethod, $cacheSettings);
             $objReader = \PHPExcel_IOFactory::createReader('Excel2007');
             $objPHPExcel = $objReader->load($fileName);
         } catch (Exception $ex) {

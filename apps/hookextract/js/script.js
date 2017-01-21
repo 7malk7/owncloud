@@ -100,6 +100,7 @@
             var data = {
                 from: $("#from").val(),
                 to: $("#to").val()
+                
             };
             
             
@@ -110,7 +111,8 @@
                     var data = {
                         datefrom: $("#from").val(),
                         dateto: $("#to").val(),
-                        formtype: $("#presel").val().join(";")
+                        formtype: $("#presel").val().join(";"),
+                        user: $("#user").val()
                     };
 
                     debugger;
@@ -122,7 +124,8 @@
                             var data = {
                                 datefrom: $("#from").val(),
                                 dateto: $("#to").val(),
-                                formtype: $("#presel").val()[0]
+                                formtype: $("#presel").val().join(";"),
+                                user: $("#user").val()
                             };
 
                             debugger;
@@ -143,7 +146,8 @@
             var data = {
                 datefrom: $("#from").val(),
                 dateto: $("#to").val(),
-                formtype: $("#presel").val()[0]
+                formtype: $("#presel").val().join(";"),
+                user: $("#user").val()
             };
 
             debugger;
@@ -156,7 +160,8 @@
                     var data = {
                         datefrom: $("#from").val(),
                         dateto: $("#to").val(),
-                        formtype: $("#presel").val()[0]
+                        formtype: $("#presel").val().join(";"),
+                        user: $("#user").val()
                     };
 
                     debugger;
@@ -179,7 +184,8 @@
             var data = {
                 datefrom: $("#from").val(),
                 dateto: $("#to").val(),
-                formtype: $("#presel").val()[0]
+                formtype: $("#presel").val().join(";"),
+                user: $("#user").val()
             };
 
             debugger;

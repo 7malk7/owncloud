@@ -39,6 +39,19 @@ class ObservationNodeMapper extends Mapper {
 		$sql = 'SELECT * FROM `*PREFIX*deduct_observation_node`';
 		return $this->findEntities($sql, $limit, $offset);
 	}
+	
+	public function selectUsersByInterval($from, $to, $limit = null, $offset = null) {
+	
+		$sql = 'select `onode`.createdby from `*PREFIX*deduct_forms` '.
+				' inner JOIN `*PREFIX*deduct_observation_node` as onode on onode.uuid = `*PREFIX*deduct_forms`.uuid ' .
+				' where `*PREFIX*deduct_forms`.createdat >= "' . $from . '" AND `*PREFIX*deduct_forms`.createdat <= "' . $to . '" ';
+	
+		try {
+			return $this->findEntities($sql, [], $limit, $offset);
+		} catch (DoesNotExistException $exc) {
+			return null;
+		}
+	}
 
 
 	public function NodesTitleCount($title) {

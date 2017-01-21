@@ -20,6 +20,7 @@ use OCP\AppFramework\Http\DownloadResponse;
 use OCP\AppFramework\Controller;
 use OCA\Deducttodb\Db\EntryMapper;
 use OCA\Deducttodb\Db\FormsMapper;
+use OCA\DeductToDB\Db\ObservationNodeMapper;
 use OCA\Deducttodb\Db\entryArchiveMapper;
 use OCA\Deducttodb\Db\paramsMapper;
 use OCA\HookExtract\AppInfo\Hookextract;
@@ -109,6 +110,7 @@ class PageController extends Controller {
      */
     public function preselect($from, $to) {
         $mapper = new FormsMapper($this->db);
+        $nodemapper = new ObservationNodeMapper($this->db);
         $arch_mapper = new \OCA\DeductToDB\Db\entryArchiveMapper($this->db);
 
         $strout = "";
@@ -117,18 +119,36 @@ class PageController extends Controller {
         $data = $mapper->selectFormsbyInterval($from, $to);
         $archive = [];
         $data_uniq = [];
+        $users = [];
         foreach ($data as $line_u) {
             $data_uniq[] = $line_u->getType();
+        }
+        
+        $users = $nodemapper->selectUsersByInterval($from, $to);
+        
+        foreach ($users as $users_u) {
+        	$users_uniq[] = $users_u->getCreatedby();
         }
 
         $data_uniq = array_unique($data_uniq);
         $strout .= "<p>From:" . $from . " To: " . $to . "</p>";
+        $strout .= "<p>Form types:</p>";
         $strout .= "<br><p><select name='presel' id='presel' multiple='yes' size='6' style='height:100px'>";
         sort($data_uniq);
         foreach ($data_uniq as $line) {
             $strout .= "<option value='" . $line . "'>" . $line . "</option>";
         }
         $strout .= "</select></p>";
+        
+        $strout .= "<p>Users:</p>";
+        $users_uniq = array_unique($users_uniq);
+        $strout .= "<br><p><select name='user' id='user'>";
+        sort($users_uniq);
+        foreach ($users_uniq as $line) {
+        	$strout .= "<option value='" . $line . "'>" . $line . "</option>";
+        }
+        $strout .= "</select></p>";
+        
 
         $archive = $arch_mapper->findByDate($from, $to);
         if (count($archive) >= 0) {
@@ -159,7 +179,7 @@ class PageController extends Controller {
      * Simply method that posts back the payload of the request
      * @NoAdminRequired
      */
-    public function select($formtype, $datefrom, $dateto) {
+    public function select($formtype, $datefrom, $dateto, $user) {
         $params = ['user' => $this->userId];
         $mapper = new EntryMapper($this->db);
 
@@ -171,7 +191,7 @@ class PageController extends Controller {
         $output = [];
 
         foreach ($in_array as $type) {
-            $data = $mapper->findByFormType($type, $datefrom, $dateto);
+            $data = $mapper->findByFormType($type, $datefrom, $dateto, $user);
             foreach ($data as $line) {
                 if (!$headers[$line->getKey()]) {
                     $headers[$line->getKey()] = [];
