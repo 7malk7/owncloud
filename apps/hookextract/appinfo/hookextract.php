@@ -61,6 +61,8 @@ class Hookextract extends App {
     public function runJob() {
         $iniMapper = new \OCA\DeductToDB\Db\paramsMapper($this->getContainer()->getServer()->getDb());
         $confParam = "conf";
+        $pregBrackets = "/\[(.*?)\]/";
+        $apprSуmbols = '/[^a-zA-Z0-9\-\._]/';
 
         $maxConf = 10;
         $counter = 1;
@@ -105,19 +107,33 @@ class Hookextract extends App {
                 $storage = $this->userfolder;
                 if (!$storage) {
                     $storage = $this->root;
-                }
-                                
+                }                               
                 
                 $today = date_create();
                 $today_str = $today->format('Ymd');
                 $fileName = $iniMapper->findByNameWithDefault("conf" . $counter . "_saveFilename", $today_str . '.xlsx');
+                
+                //check [timestamp] format
+                $foundedMatches = preg_match($pregBrackets, $fileName, $timestamp);
+                // 1. replace the forbidden symbols with a gap
+                $model = preg_replace($apprSуmbols,' ', $timestamp[1]);
+                if ($foundedMatches > 0) {
+                    $time = $today->format($model);
+                    if (date_create_from_format($model, $time) !== FALSE) {   
+                        // it's a date
+                        $anyDate = $time;
+                    }
+                    else  $anyDate = $model; 
+                // 2. change fileName according to [timestamp]
+                $fileName = preg_replace($pregBrackets, '_' .$anyDate, $fileName);
+                }
+                else 
+                {   // replace forbidden symbols with a gap
+                    $fileName = preg_replace($pregBrackets, '_', $fileName);
+                }
 
                 $formtype = $iniMapper->findByNameWithDefault("conf" . $counter . "_formtype", "*");
-                
-                
-                
-                $fileName = str_replace("[timestamp]", $today_str, $fileName);
-                
+                              
                 $app->exportToServer($formtype, $begin_selection, $end_selection, 
                 		$this->getContainer()->getServer()->getDb(), $storage, $reqUsers, $fileName);
 
