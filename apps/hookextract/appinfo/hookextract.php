@@ -47,7 +47,7 @@ class Hookextract extends App {
             return new XmlFactory($c->query('RootStorage'));
         });
         
-        $this->runJob();
+        //$this->runJob();
     }
 
     public function getRootFolder() {
@@ -102,7 +102,7 @@ class Hookextract extends App {
                 $ddiff = $interval->format("%a");
             }
 
-            if (($ddiff >= 0 || !$lastrun_time) && $active != "-") {
+            if (($ddiff >= 1 || !$lastrun_time) && $active != "-") {
                 $app = $this; //new \OCA\Hookextract\AppInfo\Hookextract();
                 $storage = $this->userfolder;
                 if (!$storage) {
