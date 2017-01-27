@@ -13,6 +13,7 @@ use Box\Spout\Writer\WriterFactory;
 use Box\Spout\Reader\ReaderFactory;
 use Box\Spout\Common\Type;
 use Box\Spout\Writer\Style\StyleBuilder;
+use OCA\DeductToDB\Storage\StorageException;
 
 require_once "phpexcel/Classes/PHPExcel.php";
 require_once "spout/Autoloader/autoload.php";
@@ -32,7 +33,6 @@ class Hookextract extends App {
         $this->userfolder = $container->query('ServerContainer')->getUserFolder();
         $this->logger = $container->getServer()->getLogger();
         $this->db = $container->getServer()->getDatabaseConnection();
-
 
         /**
          * Controllers
@@ -70,11 +70,8 @@ class Hookextract extends App {
         $maxConf = 10;
         $counter = 1;
 
-
-
         $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
         while (!empty($recurr)) {
-
             $begin = $iniMapper->findByNameWithDefault("conf" . $counter . "_begin", "");
             $begin_selection = $iniMapper->findByNameWithDefault("conf" . $counter . "_begin_selection", "");
             $end_selection = $iniMapper->findByNameWithDefault("conf" . $counter . "_end_selection", "");
@@ -91,37 +88,30 @@ class Hookextract extends App {
                 $end_selection = date("Y-m-d", $end_selection_date);
             }
 
-
             $lastrun = $iniMapper->findByNameWithDefault("conf" . $counter . "_lastrun", "");
             $active = $iniMapper->findByNameWithDefault("conf" . $counter . "_active", "-");
             $reqUsers = $iniMapper->findManyByName("conf" . $counter . "_user");
 
             $today = date_create();
-
             $lastrun_time = date_create($lastrun);
 
-            if ($lastrun_time) {
+            if (!empty($lastrun)) {
                 $interval = date_diff($today, $lastrun_time);
                 $ddiff = $interval->format("%a");
             }
 
-            if (($ddiff >= 0 || !$lastrun_time) && $active != "-") {
+            if (($ddiff >= 1 || empty($lastrun)) && $active != "-") {
                 $app = $this; //new \OCA\Hookextract\AppInfo\Hookextract();
                 $storage = $this->userfolder;
                 if (!$storage) {
                     $storage = $this->root;
                 }
 
-
                 $today = date_create();
                 $today_str = $today->format('Ymd');
                 $fileName = $iniMapper->findByNameWithDefault("conf" . $counter . "_saveFilename", $today_str . '.xlsx');
-
-                $formtype = $iniMapper->findByNameWithDefault("conf" . $counter . "_formtype", "*");
-
-
-
                 $fileName = str_replace("[timestamp]", $today_str, $fileName);
+                $formtype = $iniMapper->findByNameWithDefault("conf" . $counter . "_formtype", "*");
 
                 $app->exportToServer($formtype, $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $storage, $reqUsers, $fileName);
 
@@ -131,7 +121,6 @@ class Hookextract extends App {
             }
 
             $counter++;
-
             $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
         }
     }
@@ -144,24 +133,19 @@ class Hookextract extends App {
     public function dbGetXls($formtype, $datefrom, $dateto, $db, $user) {
         $headers = [];
         $output = [];
+        $keys = [];
 
-        $mapper = new EntryMapper($db);
-        $data = $mapper->findByFormType($formtype, $datefrom, $dateto, $user);
-        $this->parseData($data, $headers, $output);
+        $users[] = $user;
+        $this->buildOutput($formtype, $datefrom, $dateto, $db, $keys, $output, $users);
 
-        $archiveMapper = new EntryArchiveMapper($db);
-        $data_arch = $archiveMapper->findByDate($datefrom, $dateto, $user);
-        $this->parseData($data_arch, $headers, $output);
-        $keys = array_keys($headers);
-
-        $content = $this->exportToNewFile($output, $keys);
+        $content = $this->exportFile($output, $keys);
 
         return $content;
     }
 
     /**
      * Parse data to output format
-     * @param type $data
+     * @param array $data
      * @param array $headers
      * @param array $output
      */
@@ -189,64 +173,29 @@ class Hookextract extends App {
      * @param type $user
      * @throws StorageException
      */
-    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $users, $fileName) {
-        $headers = [];
+    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $reqUsers, $fileName) {
         $output = [];
-
-        foreach ($users as $user) {
-
-            $mapper = new EntryMapper($db);
-            $data1 = $mapper->findByFormType($formtype, $datefrom, $dateto, $user->getValue());
-            foreach ($data1 as $line1) {
-                $data[] = $line1;
-            }
-            //$data = array_merge($data, $data1);
-
-            $archiveMapper = new EntryArchiveMapper($db);
-            $data_arch1 = $archiveMapper->findByDate($datefrom, $dateto, $user->getValue());
-            foreach ($data_arch1 as $arch_line1) {
-                $data_arch[] = $arch_line1;
-            }
-            //$data_arch = array_merge($data_arch, $data_arch1);
+        $keys = [];
+        $data = [];
+        $dataArchive = [];
+        
+        foreach ($reqUsers as $reqUser) {
+            $users[] = $reqUser->getValue();
         }
-
-        $this->parseData($data, $headers, $output);
-        $this->parseData($data_arch, $headers, $output);
-
-        // server part
-        $iniMapper = new paramsMapper($db);
-
+        
+        $this->buildOutput($formtype, $datefrom, $dateto, $db, $keys, $output, $users);
 
         // check if file exists and write to it if possible
         try {
             try {
                 $file = $folder->get($fileName);
-                $storage = $file->getStorage();
-                $filepath = $file->getInternalPath();
-                $contents = $storage->file_get_contents($filepath);
-
-                if (strlen($contents) <= 0) {
-                    throw new \OCP\Files\NotFoundException("File not found");
-                }
-
-                chdir("temp");
-
-                file_put_contents($fileName, $contents);
-
-                $content = $this->exportToExistingFile($fileName, $output);
-                unlink($fileName);
-                chdir("..");
+                $path = $this->getPath($file);
+                $this->exportToExistingFile($path, $output, $keys);
             } catch (\OCP\Files\NotFoundException $e) {
-                chdir("temp");
-                unlink($fileName);
                 $file = $folder->newFile($fileName);
-                $keys = array_keys($headers);
-                $content = $this->exportToNewFile($output, $keys);
-                unlink($fileName);
-                chdir("..");
+                $path = $this->getPath($file);
+                $this->exportToNewFile($output, $keys, $path);
             }
-            // the id can be accessed by $file->getId();
-            $file->putContent($content);
         } catch (\OCP\Files\NotPermittedException $e) {
             // you have to create this exception by yourself ;)
             throw new StorageException("Can't write to file");
@@ -254,100 +203,136 @@ class Hookextract extends App {
     }
 
     /**
-     * Export data to a new Excel file
+     * Build output data
+     * @param type $formtype
+     * @param type $datefrom
+     * @param type $dateto
+     * @param type $db
+     * @param type $keys
+     * @param type $output
+     * @param type $users
+     */
+    private function buildOutput($formtype, $datefrom, $dateto, $db, &$keys, &$output, $users) {
+        $headers = [];
+        $data = [];
+        $dataArchive = [];
+        $mapper = new EntryMapper($db);
+        $archiveMapper = new EntryArchiveMapper($db);
+        foreach ($users as $user) {
+            $dataForUser = $mapper->findByFormType($formtype, $datefrom, $dateto, $user);
+            $data = array_merge($data, $dataForUser);
+
+            $dataArchiveForUser = $archiveMapper->findByDate($datefrom, $dateto, $user);
+            $dataArchive = array_merge($dataArchive, $dataArchiveForUser);
+        }
+        if (!empty($data)) {
+            $this->parseData($data, $headers, $output);
+        }
+        if (!empty($dataArchive)) {
+            $this->parseData($data_arch, $headers, $output);
+        }
+        if (!empty($headers)) {
+            $keys = array_keys($headers);
+        }
+    }
+
+    /**
+     * Export data to a new Excel file on server
      * @param array $output
      * @param array $keys
      * @return type $content
      */
-    private function exportToNewFile($output, $keys) {
-//        $objPHPExcel = new \PHPExcel();
-//
-//        $objPHPExcel->getProperties()->setTitle("Extraction")
-//                ->setSubject("Extraction")
-//                ->setDescription("Extraction")
-//                ->setKeywords("Extraction");
-//        $objPHPExcel->setActiveSheetIndex(0);
-//        $objPHPExcel->getActiveSheet()->fromArray($keys, null, 'A1');
-//        $objPHPExcel->getActiveSheet()->getStyle('A1:AZ1')->getFont()->setBold(true);
-//        $objPHPExcel->getActiveSheet()->fromArray($output, null, 'A2');
-//
-//        foreach (range('A', 'Z') as $column) {
-//            $aColumn = 'A' . $column;
-//            if ($objPHPExcel->getActiveSheet()->getCell($column . '1')->getValue()) {
-//                $objPHPExcel->getActiveSheet()->getColumnDimension($column)->setAutoSize(true);
-//            }
-//            if ($objPHPExcel->getActiveSheet()->getCell($aColumn . '1')->getValue()) {
-//                $objPHPExcel->getActiveSheet()->getColumnDimension($aColumn)->setAutoSize(true);
-//            }
-//        }
-//
-//        $objPHPExcel->getActiveSheet()->setTitle('Extraction');
-//
-//        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
-//        ob_start();
-//        $objWriter->save('php://output');
-//        $content = ob_get_clean();
-
+    private function exportToNewFile($output, $keys, $path) {
         $writer = WriterFactory::create(Type::XLSX);
         $style = (new StyleBuilder())->setFontBold()->build();
-        ob_start();
-        $writer->openToFile('php://output')
-                ->addRowWithStyle($keys, $style)
-                ->addRows($output)
-                ->close();
-        $content = ob_get_clean();
+        $writer->openToFile($path);
 
-        return $content;
+        if (empty($output)) {
+            $message = [];
+            $message[] = "No data available";
+            $writer->addRow($message);
+        } else {
+            $writer->addRowWithStyle($keys, $style)
+                    ->addRows($output);
+        }
+
+        $writer->close();
     }
 
     /**
-     * Export data to an existing Excel file
+     * Export data to an existing Excel file on server
      * @param string $fileName
      * @param array $output
      * @return type $content
      */
-    private function exportToExistingFile($fileName, $newData) {
-//        try {
-//            $objReader = \PHPExcel_IOFactory::createReader('Excel2007');
-//            $objPHPExcel = $objReader->load($fileName);
-//        } catch (Exception $ex) {
-//            echo $ex->getMessage();
-//        }
-//
-//        $objWorksheet = $objPHPExcel->setActiveSheetIndex(0);
-//        $startRow = (int) $objWorksheet->getHighestRow() + 1;
-//        $objWorksheet->fromArray($output, null, 'A' . $startRow);
-//
-//        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
-//        ob_start();
-//        $objWriter->save('php://output');
-//        $content = ob_get_clean();
-
+    private function exportToExistingFile($path, $newData, $newKeys) {
         $reader = ReaderFactory::create(Type::XLSX);
         $reader->setShouldFormatDates(true);
-        $reader->open($fileName);
-    
+        $reader->open($path);
         foreach ($reader->getSheetIterator() as $sheet) {
             foreach ($sheet->getRowIterator() as $row) {
                 $oldData[] = $row;
             }
         }
-        
         $reader->close();
-        $keys = array_shift($oldData);
-        
+
+        $writer = WriterFactory::create(Type::XLSX);
+        $style = (new StyleBuilder())->setFontBold()->build();
+        $writer->openToFile($path);
+        if (count($oldData) === 1) {
+            if (empty($newData)) {
+                $writer->addRows($oldData);
+            } else {
+                $writer->addRowWithStyle($newKeys, $style)
+                        ->addRows($newData);
+            }
+        } else {
+            $oldKeys = array_shift($oldData);
+            $writer->addRowWithStyle($oldKeys, $style)
+                    ->addRows($oldData)
+                    ->addRows($newData);
+        }
+        $writer->close();
+    }
+
+    /**
+     * Export data to a new Excel file for downloading
+     * @param array $output
+     * @param array $keys
+     * @return type
+     */
+    private function exportFile($output, $keys) {
         $writer = WriterFactory::create(Type::XLSX);
         $style = (new StyleBuilder())->setFontBold()->build();
         ob_start();
-        $writer->openToFile('php://output')
-                ->addRowWithStyle($keys, $style)
-                ->addRows($oldData)
-                ->addRows($newData)
-                ->close();
-        
-        $content = ob_get_clean();
+        $writer->openToFile("php://output");
 
+        if (empty($output)) {
+            $message = [];
+            $message[] = "No data available";
+            $writer->addRow($message);
+        } else {
+            $writer->addRowWithStyle($keys, $style)
+                    ->addRows($output);
+        }
+
+        $writer->close();
+        $content = ob_get_clean();
         return $content;
+    }
+
+    /**
+     * Get file path on server
+     * @param type $file
+     * @return type
+     */
+    private function getPath($file) {
+        $storage = $file->getStorage();
+        $filepath = $file->getInternalPath();
+        $fullPath = $storage->getLocalFile($filepath);
+        $fullPath = str_replace('\\', '/', $fullPath);
+
+        return $fullPath;
     }
 
     /**

@@ -276,21 +276,6 @@ class PageController extends Controller {
         if (isset($_FILES['filepath'])) {
             if ($_FILES['filepath']['tmp_name'] && !$_FILES['filepath']['error']) {
                 $inputFile = $_FILES['filepath']['tmp_name'];
-//                try {
-//                    $inputFileType = \PHPExcel_IOFactory::identify($inputFile);
-//                    $objReader = \PHPExcel_IOFactory::createReader($inputFileType);
-//                    $objPHPExcel = $objReader->load($inputFile);
-//                } catch (Exception $ex) {
-//                    echo $ex->getMessage();
-//                }
-//
-//                $objWorksheet = $objPHPExcel->getActiveSheet();
-//                $highestRow = $objWorksheet->getHighestRow();
-//                $highestColumn = $objWorksheet->getHighestColumn();
-//
-//                $keys = $objWorksheet->rangeToArray('A1:' . $highestColumn . '1', NULL, TRUE, FALSE);
-//                $data = $objWorksheet->rangeToArray('A2:' . $highestColumn . $highestRow, NULL, TRUE, FALSE);
-
                 $reader = ReaderFactory::create(Type::XLSX);
                 $reader->setShouldFormatDates(true);
                 $reader->open($inputFile);
