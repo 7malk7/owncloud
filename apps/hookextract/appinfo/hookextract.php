@@ -57,19 +57,20 @@ class Hookextract extends App {
     public function getUserFolder() {
         return $this->userfolder;
     }
-
+   
     public function runJob() {
+
         $iniMapper = new \OCA\DeductToDB\Db\paramsMapper($this->getContainer()->getServer()->getDb());
         $confParam = "conf";
 
-        $maxConf = 10;
+        $maxConf = 20;
         $counter = 1;
-        
-        
+
+
 
         $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
+
         while (!empty($recurr)) {
-        	$label = $iniMapper->findByNameWithDefault("conf" . $counter . "_label", "");
 
             $begin = $iniMapper->findByNameWithDefault("conf" . $counter . "_begin", "");
             $begin_selection = $iniMapper->findByNameWithDefault("conf" . $counter . "_begin_selection", "");
@@ -87,50 +88,85 @@ class Hookextract extends App {
                 $end_selection = date("Y-m-d", $end_selection_date);
             }
 
-
-            $lastrun = $iniMapper->findByNameWithDefault("conf" . $counter . "_lastrun", "");
+            $lastrun = false;
+            $lastrun = $iniMapper->findByNameWithDefault("conf" . $counter . "_lastrun", false);
             $active = $iniMapper->findByNameWithDefault("conf" . $counter . "_active", "-");
             $reqUsers = $iniMapper->findManyByName("conf" . $counter . "_user");
 
-            $today = date_create();
-
-            $lastrun_time = date_create($lastrun);
-
-            if ($lastrun_time) {
-                $interval = date_diff($today, $lastrun_time);
-                $ddiff = $interval->format("%a");
-            }
-
-            if (($ddiff >= 0 || !$lastrun_time) && $active != "-") {
+            if (($this->checkRecurrency($recurr, $lastrun) || !$lastrun) && $active != "-") {
+                echo "test \n";
                 $app = $this; //new \OCA\Hookextract\AppInfo\Hookextract();
                 $storage = $this->userfolder;
                 if (!$storage) {
                     $storage = $this->root;
                 }
-                                
-                
+
+		        $label = $iniMapper->findByNameWithDefault("conf" . $counter . "_label", "*");
+		
+
+
                 $today = date_create();
                 $today_str = $today->format('Ymd');
                 $fileName = $iniMapper->findByNameWithDefault("conf" . $counter . "_saveFilename", $today_str . '.xlsx');
 
                 $formtype = $iniMapper->findByNameWithDefault("conf" . $counter . "_formtype", "*");
                 
-                
-                
-                $fileName = str_replace("[timestamp]", $today_str, $fileName);
-                
-                $app->exportToServer($formtype, $begin_selection, $end_selection, 
-                		$this->getContainer()->getServer()->getDb(), $storage, $reqUsers, $fileName);
+                $predelete = $iniMapper->findByNameWithDefault("conf" . $counter . "_filepredelete", "-");
 
+
+
+                $fileName = str_replace("[timestamp]", $today_str, $fileName);
+
+                $app->exportToServer($formtype, $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $storage, $reqUsers, $fileName, $predelete);
+			
                 $today = date_create();
                 $today_str = $today->format('Y-m-d H:i:s');
                 $iniMapper->setByName("conf" . $counter . "_lastrun", $today_str);
             }
 
             $counter++;
-
             $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
         }
+    }
+    
+    /**
+     * Check the recurrency settings
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function checkRecurrency($recurrency, $lastrun) {
+    	if(!$lastrun){
+    		return true;
+    	}
+    	
+    	$min_constant = 1;
+    	
+    	$today = date_create();
+    	$lastrun_time = date_create($lastrun);
+
+    	if ($lastrun_time) {
+    		$interval = date_diff($today, $lastrun_time);
+    		$ddiff = $interval->format("%a");
+    	}
+    	if($recurrency === "daily"){
+    		if($ddiff > $min_constant){
+    			return true;
+    		}
+    		
+    	}elseif ($recurrency === "monthly"){
+    		$interval = date_diff($today, $lastrun_time);
+    		$mdiff = $interval->format("%m");
+    		if($mdiff > $min_constant){
+    			return true;
+    		}
+    	}elseif ($recurrency === "yearly"){
+    			$interval = date_diff($today, $lastrun_time);
+    			$mdiff = $interval->format("%y");
+    			if($mdiff > $min_constant){
+    				return true;
+    			}
+    	}
+    	return false;
     }
 
     /**
@@ -186,7 +222,7 @@ class Hookextract extends App {
      * @param type $user
      * @throws StorageException
      */
-    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $users, $fileName) {
+    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $users, $fileName, $predelete) {
         $headers = [];
         $output = [];
         $data = [];
@@ -222,6 +258,12 @@ class Hookextract extends App {
                 $file = $folder->get($fileName);
                 $storage = $file->getStorage();
                 $filepath = $file->getInternalPath();
+                
+                if($predelete == '+'){
+        	        $result = $storage->unlink(''.$filepath);
+
+                }
+                
                 $contents = $storage->file_get_contents($filepath);
                 
                 if(strlen($contents) <= 0){
