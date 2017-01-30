@@ -67,7 +67,7 @@ class Hookextract extends App {
         $iniMapper = new \OCA\DeductToDB\Db\paramsMapper($this->getContainer()->getServer()->getDb());
         $confParam = "conf";
 
-        $maxConf = 10;
+        $maxConf = 20;
         $counter = 1;
 
         $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
@@ -88,32 +88,27 @@ class Hookextract extends App {
                 $end_selection = date("Y-m-d", $end_selection_date);
             }
 
-            $lastrun = $iniMapper->findByNameWithDefault("conf" . $counter . "_lastrun", "");
+            $lastrun = false;
+            $lastrun = $iniMapper->findByNameWithDefault("conf" . $counter . "_lastrun", false);
             $active = $iniMapper->findByNameWithDefault("conf" . $counter . "_active", "-");
             $reqUsers = $iniMapper->findManyByName("conf" . $counter . "_user");
 
-            $today = date_create();
-            $lastrun_time = date_create($lastrun);
-
-            if (!empty($lastrun)) {
-                $interval = date_diff($today, $lastrun_time);
-                $ddiff = $interval->format("%a");
-            }
-
-            if (($ddiff >= 1 || empty($lastrun)) && $active != "-") {
+            if (($this->checkRecurrency($recurr, $lastrun) || !$lastrun) && $active != "-") {
                 $app = $this; //new \OCA\Hookextract\AppInfo\Hookextract();
                 $storage = $this->userfolder;
                 if (!$storage) {
                     $storage = $this->root;
                 }
 
+                $label = $iniMapper->findByNameWithDefault("conf" . $counter . "_label", "*");
+
                 $today = date_create();
                 $today_str = $today->format('Ymd');
                 $fileName = $iniMapper->findByNameWithDefault("conf" . $counter . "_saveFilename", $today_str . '.xlsx');
-                $fileName = str_replace("[timestamp]", $today_str, $fileName);
                 $formtype = $iniMapper->findByNameWithDefault("conf" . $counter . "_formtype", "*");
+                $predelete = $iniMapper->findByNameWithDefault("conf" . $counter . "_filepredelete", "-");
 
-                $app->exportToServer($formtype, $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $storage, $reqUsers, $fileName);
+                $app->exportToServer($formtype, $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $storage, $reqUsers, $fileName, $predelete);
 
                 $today = date_create();
                 $today_str = $today->format('Y-m-d H:i:s');
@@ -123,6 +118,45 @@ class Hookextract extends App {
             $counter++;
             $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
         }
+    }
+
+    /**
+     * Check the recurrency settings
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function checkRecurrency($recurrency, $lastrun) {
+        if (!$lastrun) {
+            return true;
+        }
+
+        $min_constant = 1;
+
+        $today = date_create();
+        $lastrun_time = date_create($lastrun);
+
+        if ($lastrun_time) {
+            $interval = date_diff($today, $lastrun_time);
+            $ddiff = $interval->format("%a");
+        }
+        if ($recurrency === "daily") {
+            if ($ddiff > $min_constant) {
+                return true;
+            }
+        } elseif ($recurrency === "monthly") {
+            $interval = date_diff($today, $lastrun_time);
+            $mdiff = $interval->format("%m");
+            if ($mdiff > $min_constant) {
+                return true;
+            }
+        } elseif ($recurrency === "yearly") {
+            $interval = date_diff($today, $lastrun_time);
+            $mdiff = $interval->format("%y");
+            if ($mdiff > $min_constant) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -173,23 +207,30 @@ class Hookextract extends App {
      * @param type $user
      * @throws StorageException
      */
-    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $reqUsers, $fileName) {
+    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $reqUsers, $fileName, $predelete) {
         $output = [];
         $keys = [];
         $data = [];
         $dataArchive = [];
-        
+
         foreach ($reqUsers as $reqUser) {
             $users[] = $reqUser->getValue();
         }
-        
+
         $this->buildOutput($formtype, $datefrom, $dateto, $db, $keys, $output, $users);
 
-        // check if file exists and write to it if possible
+// check if file exists and write to it if possible
         try {
             try {
                 $file = $folder->get($fileName);
-                $path = $this->getPath($file);
+                if ($predelete != '+') {
+                    $path = $this->getPath($file);
+                } else {
+                    $storage = $file->getStorage();
+                    $filepath = $file->getInternalPath();
+                    $storage->unlink(''.$filepath);
+                    throw new \OCP\Files\NotFoundException("File not found");
+                }
                 $this->exportToExistingFile($path, $output, $keys);
             } catch (\OCP\Files\NotFoundException $e) {
                 $file = $folder->newFile($fileName);
@@ -197,7 +238,7 @@ class Hookextract extends App {
                 $this->exportToNewFile($output, $keys, $path);
             }
         } catch (\OCP\Files\NotPermittedException $e) {
-            // you have to create this exception by yourself ;)
+// you have to create this exception by yourself ;)
             throw new StorageException("Can't write to file");
         }
     }
