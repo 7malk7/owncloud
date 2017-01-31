@@ -320,33 +320,6 @@ echo "Delete result = " . $result . "\n";
      * @return type $content
      */
     private function exportToNewFile($output, $keys) {
-//        $objPHPExcel = new \PHPExcel();
-//
-//        $objPHPExcel->getProperties()->setTitle("Extraction")
-//                ->setSubject("Extraction")
-//                ->setDescription("Extraction")
-//                ->setKeywords("Extraction");
-//        $objPHPExcel->setActiveSheetIndex(0);
-//        $objPHPExcel->getActiveSheet()->fromArray($keys, null, 'A1');
-//        $objPHPExcel->getActiveSheet()->getStyle('A1:AZ1')->getFont()->setBold(true);
-//        $objPHPExcel->getActiveSheet()->fromArray($output, null, 'A2');
-//
-//        foreach (range('A', 'Z') as $column) {
-//            $aColumn = 'A' . $column;
-//            if ($objPHPExcel->getActiveSheet()->getCell($column . '1')->getValue()) {
-//                $objPHPExcel->getActiveSheet()->getColumnDimension($column)->setAutoSize(true);
-//            }
-//            if ($objPHPExcel->getActiveSheet()->getCell($aColumn . '1')->getValue()) {
-//                $objPHPExcel->getActiveSheet()->getColumnDimension($aColumn)->setAutoSize(true);
-//            }
-//        }
-//
-//        $objPHPExcel->getActiveSheet()->setTitle('Extraction');
-//
-//        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
-//        ob_start();
-//        $objWriter->save('php://output');
-//        $content = ob_get_clean();
 
         $writer = WriterFactory::create(Type::XLSX);
         $style = (new StyleBuilder())->setFontBold()->build();
@@ -367,22 +340,6 @@ echo "Delete result = " . $result . "\n";
      * @return type $content
      */
     private function exportToExistingFile($fileName, $newData) {
-//        try {
-//            $objReader = \PHPExcel_IOFactory::createReader('Excel2007');
-//            $objPHPExcel = $objReader->load($fileName);
-//        } catch (Exception $ex) {
-//            echo $ex->getMessage();
-//        }
-//
-//        $objWorksheet = $objPHPExcel->setActiveSheetIndex(0);
-//        $startRow = (int) $objWorksheet->getHighestRow() + 1;
-//        $objWorksheet->fromArray($output, null, 'A' . $startRow);
-//
-//        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
-//        ob_start();
-//        $objWriter->save('php://output');
-//        $content = ob_get_clean();
-
         $reader = ReaderFactory::create(Type::XLSX);
         $reader->setShouldFormatDates(true);
         $reader->open($fileName);
