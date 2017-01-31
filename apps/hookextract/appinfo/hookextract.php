@@ -9,8 +9,13 @@ use \OC\Files\Filesystem;
 use OCA\DeductToDB\Db\paramsMapper;
 use OCA\DeductToDB\Db\EntryArchiveMapper;
 use OCA\DeductToDB\Db\EntryMapper;
+use Box\Spout\Writer\WriterFactory;
+use Box\Spout\Reader\ReaderFactory;
+use Box\Spout\Common\Type;
+use Box\Spout\Writer\Style\StyleBuilder;
 
 require_once "phpexcel/Classes/PHPExcel.php";
+require_once "spout/Autoloader/autoload.php";
 
 class Hookextract extends App {
 
@@ -46,8 +51,8 @@ class Hookextract extends App {
         $container->registerService('XmlFactory', function ($c) {
             return new XmlFactory($c->query('RootStorage'));
         });
-        
-        //$this->runJob();
+
+        $this->runJob();
     }
 
     public function getRootFolder() {
@@ -57,7 +62,7 @@ class Hookextract extends App {
     public function getUserFolder() {
         return $this->userfolder;
     }
-   
+
     public function runJob() {
 
         $iniMapper = new \OCA\DeductToDB\Db\paramsMapper($this->getContainer()->getServer()->getDb());
@@ -69,7 +74,7 @@ class Hookextract extends App {
 
 
         $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
-
+//echo "recurr=" . $recurr ."\n";
         while (!empty($recurr)) {
 
             $begin = $iniMapper->findByNameWithDefault("conf" . $counter . "_begin", "");
@@ -92,7 +97,7 @@ class Hookextract extends App {
             $lastrun = $iniMapper->findByNameWithDefault("conf" . $counter . "_lastrun", false);
             $active = $iniMapper->findByNameWithDefault("conf" . $counter . "_active", "-");
             $reqUsers = $iniMapper->findManyByName("conf" . $counter . "_user");
-
+//echo "counter=".$counter." $recurr=".$recurr."  lastrun=".$lastrun." \n";
             if (($this->checkRecurrency($recurr, $lastrun) || !$lastrun) && $active != "-") {
                 echo "test \n";
                 $app = $this; //new \OCA\Hookextract\AppInfo\Hookextract();
@@ -101,7 +106,7 @@ class Hookextract extends App {
                     $storage = $this->root;
                 }
 
-		        $label = $iniMapper->findByNameWithDefault("conf" . $counter . "_label", "*");
+		$label = $iniMapper->findByNameWithDefault("conf" . $counter . "_label", "*");
 		
 
 
@@ -112,6 +117,8 @@ class Hookextract extends App {
                 $formtype = $iniMapper->findByNameWithDefault("conf" . $counter . "_formtype", "*");
                 
                 $predelete = $iniMapper->findByNameWithDefault("conf" . $counter . "_filepredelete", "-");
+
+		//	echo "label = " . $label. "\n";
 
 
 
@@ -125,7 +132,10 @@ class Hookextract extends App {
             }
 
             $counter++;
+//echo "counter=" . $counter ."\n";
             $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
+
+//echo "recurr=" . $recurr ."\n";
         }
     }
     
@@ -151,6 +161,7 @@ class Hookextract extends App {
     	if($recurrency === "daily"){
     		if($ddiff > $min_constant){
     			return true;
+//echo "ddiff=".$ddiff." run_daily \n";
     		}
     		
     	}elseif ($recurrency === "monthly"){
@@ -186,7 +197,7 @@ class Hookextract extends App {
         $data_arch = $archiveMapper->findByDate($datefrom, $dateto, $user);
         $this->parseData($data_arch, $headers, $output);
         $keys = array_keys($headers);
-        
+
         $content = $this->exportToNewFile($output, $keys);
 
         return $content;
@@ -227,30 +238,34 @@ class Hookextract extends App {
         $output = [];
         $data = [];
         $data_arch = [];
-        
+
         foreach ($users as $user) {
+   // echo "counter data= " . count($data). "\n";
+            $mapper = new EntryMapper($db);
+            $data1 = [];
 
-          $mapper = new EntryMapper($db);
-          $data1 = $mapper->findByFormType($formtype, $datefrom, $dateto, $user->getValue());
-          foreach($data1 as $line1){
-          	$data[] = $line1;
-          }
-          //$data = array_merge($data, $data1);
+            $data1 = $mapper->findByFormType($formtype, $datefrom, $dateto, $user->getValue());
+     //    echo "findformbytype=".count($data1) ."\n";
+            foreach ($data1 as $line1) {
+                $data[] = $line1;
+            }
+            //$data = array_merge($data, $data1);
 
-          $archiveMapper = new EntryArchiveMapper($db);
-          $data_arch1 = $archiveMapper->findByDate($datefrom, $dateto, $user->getValue());
-          foreach($data_arch1 as $arch_line1){
-          	$data_arch[] = $arch_line1;
-          }
-          //$data_arch = array_merge($data_arch, $data_arch1);
+            $archiveMapper = new EntryArchiveMapper($db);
+
+            $data_arch1 = [];
+            $data_arch1 = $archiveMapper->findByDate($datefrom, $dateto, $user->getValue());
+            foreach ($data_arch1 as $arch_line1) {
+                $data_arch[] = $arch_line1;
+            }
+            //$data_arch = array_merge($data_arch, $data_arch1);
         }
-        
+
         $this->parseData($data, $headers, $output);
         $this->parseData($data_arch, $headers, $output);
 
         // server part
-        $iniMapper = new paramsMapper($db);
-        
+        $iniMapper = new paramsMapper($db);       
 
         // check if file exists and write to it if possible
         try {
@@ -258,37 +273,36 @@ class Hookextract extends App {
                 $file = $folder->get($fileName);
                 $storage = $file->getStorage();
                 $filepath = $file->getInternalPath();
-                
-                if($predelete == '+'){
-        	        $result = $storage->unlink(''.$filepath);
 
-                }
-                
+        if($predelete == '+'){
+echo "Predeletion is active.\n";
+        	$result = $storage->unlink(''.$filepath);
+echo "Delete result = " . $result . "\n";
+        }
                 $contents = $storage->file_get_contents($filepath);
-                
-                if(strlen($contents) <= 0){
-                	throw new \OCP\Files\NotFoundException("File not found");
+
+                if (strlen($contents) <= 0) {
+                    throw new \OCP\Files\NotFoundException("File not found");
                 }
-                
+
                 chdir("temp");
-                
-                $fileNameTemp = substr(strrchr($fileName, "/"), 1);
-                if(!$fileNameTemp){
-                	$fileNameTemp = $fileName;
-                }
-                file_put_contents($fileNameTemp, $contents);             
-                
-                $content = $this->exportToExistingFile($fileNameTemp, $output);
-                unlink($fileNameTemp);
+//echo "filename=" . $fileName . "\n";
+				$localFileName = substr(strrchr($fileName, "/"), 1);
+				if(!$localFileName){
+					$localFileName = $fileName;
+				}
+                file_put_contents($localFileName, $contents);
+
+                $content = $this->exportToExistingFile($localFileName, $output);
+                unlink($localFileName);
                 chdir("..");
             } catch (\OCP\Files\NotFoundException $e) {
-            	chdir("temp");
-            	$fileNameTemp = substr(strrchr($fileName, "/"), 1);
-            	unlink($fileNameTemp);
-                $file = $folder->newFile($fileNameTemp);
+                chdir("temp");
+                unlink($fileName);
+                $file = $folder->newFile($fileName);
                 $keys = array_keys($headers);
                 $content = $this->exportToNewFile($output, $keys);
-                unlink($fileNameTemp);
+                unlink($fileName);
                 chdir("..");
             }
             // the id can be accessed by $file->getId();
@@ -306,32 +320,41 @@ class Hookextract extends App {
      * @return type $content
      */
     private function exportToNewFile($output, $keys) {
-        $objPHPExcel = new \PHPExcel();
+//        $objPHPExcel = new \PHPExcel();
+//
+//        $objPHPExcel->getProperties()->setTitle("Extraction")
+//                ->setSubject("Extraction")
+//                ->setDescription("Extraction")
+//                ->setKeywords("Extraction");
+//        $objPHPExcel->setActiveSheetIndex(0);
+//        $objPHPExcel->getActiveSheet()->fromArray($keys, null, 'A1');
+//        $objPHPExcel->getActiveSheet()->getStyle('A1:AZ1')->getFont()->setBold(true);
+//        $objPHPExcel->getActiveSheet()->fromArray($output, null, 'A2');
+//
+//        foreach (range('A', 'Z') as $column) {
+//            $aColumn = 'A' . $column;
+//            if ($objPHPExcel->getActiveSheet()->getCell($column . '1')->getValue()) {
+//                $objPHPExcel->getActiveSheet()->getColumnDimension($column)->setAutoSize(true);
+//            }
+//            if ($objPHPExcel->getActiveSheet()->getCell($aColumn . '1')->getValue()) {
+//                $objPHPExcel->getActiveSheet()->getColumnDimension($aColumn)->setAutoSize(true);
+//            }
+//        }
+//
+//        $objPHPExcel->getActiveSheet()->setTitle('Extraction');
+//
+//        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+//        ob_start();
+//        $objWriter->save('php://output');
+//        $content = ob_get_clean();
 
-        $objPHPExcel->getProperties()->setTitle("Extraction")
-                ->setSubject("Extraction")
-                ->setDescription("Extraction")
-                ->setKeywords("Extraction");
-        $objPHPExcel->setActiveSheetIndex(0);
-        $objPHPExcel->getActiveSheet()->fromArray($keys, null, 'A1');
-        $objPHPExcel->getActiveSheet()->getStyle('A1:AZ1')->getFont()->setBold(true);
-        $objPHPExcel->getActiveSheet()->fromArray($output, null, 'A2');
-
-        foreach (range('A', 'Z') as $column) {
-            $aColumn = 'A' . $column;
-            if ($objPHPExcel->getActiveSheet()->getCell($column . '1')->getValue()) {
-                $objPHPExcel->getActiveSheet()->getColumnDimension($column)->setAutoSize(true);
-            }
-            if ($objPHPExcel->getActiveSheet()->getCell($aColumn . '1')->getValue()) {
-                $objPHPExcel->getActiveSheet()->getColumnDimension($aColumn)->setAutoSize(true);
-            }
-        }
-
-        $objPHPExcel->getActiveSheet()->setTitle('Extraction');
-
-        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+        $writer = WriterFactory::create(Type::XLSX);
+        $style = (new StyleBuilder())->setFontBold()->build();
         ob_start();
-        $objWriter->save('php://output');
+        $writer->openToFile('php://output')
+                ->addRowWithStyle($keys, $style)
+                ->addRows($output)
+                ->close();
         $content = ob_get_clean();
 
         return $content;
@@ -343,24 +366,46 @@ class Hookextract extends App {
      * @param array $output
      * @return type $content
      */
-    private function exportToExistingFile($fileName, $output) {
-        try {
-        	$cacheMethod = \PHPExcel_CachedObjectStorageFactory::cache_to_phpTemp;
-        	$cacheSettings = array('memoryCacheSize' => '256MB');
-        	\PHPExcel_Settings::setCacheStorageMethod($cacheMethod, $cacheSettings);
-            $objReader = \PHPExcel_IOFactory::createReader('Excel2007');
-            $objPHPExcel = $objReader->load($fileName);
-        } catch (Exception $ex) {
-            echo $ex->getMessage();
+    private function exportToExistingFile($fileName, $newData) {
+//        try {
+//            $objReader = \PHPExcel_IOFactory::createReader('Excel2007');
+//            $objPHPExcel = $objReader->load($fileName);
+//        } catch (Exception $ex) {
+//            echo $ex->getMessage();
+//        }
+//
+//        $objWorksheet = $objPHPExcel->setActiveSheetIndex(0);
+//        $startRow = (int) $objWorksheet->getHighestRow() + 1;
+//        $objWorksheet->fromArray($output, null, 'A' . $startRow);
+//
+//        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+//        ob_start();
+//        $objWriter->save('php://output');
+//        $content = ob_get_clean();
+
+        $reader = ReaderFactory::create(Type::XLSX);
+        $reader->setShouldFormatDates(true);
+        $reader->open($fileName);
+        //$reader->open("c:\\Bitnami\\owncloud-8.0.4-0\\apps\\owncloud\\htdocs\\temp\\20170123.xlsx");
+    
+        foreach ($reader->getSheetIterator() as $sheet) {
+            foreach ($sheet->getRowIterator() as $row) {
+                $oldData[] = $row;
+            }
         }
-
-        $objWorksheet = $objPHPExcel->setActiveSheetIndex(0);
-        $startRow = (int) $objWorksheet->getHighestRow() + 1;
-        $objWorksheet->fromArray($output, null, 'A' . $startRow);
-
-        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+        
+        $reader->close();
+        $keys = array_shift($oldData);
+        
+        $writer = WriterFactory::create(Type::XLSX);
+        $style = (new StyleBuilder())->setFontBold()->build();
         ob_start();
-        $objWriter->save('php://output');
+        $writer->openToFile('php://output')
+                ->addRowWithStyle($keys, $style)
+                ->addRows($oldData)
+                ->addRows($newData)
+                ->close();
+        
         $content = ob_get_clean();
 
         return $content;
