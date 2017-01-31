@@ -345,7 +345,7 @@ class Hookextract extends App {
         $writer->openToFile('php://output');
         if (empty($output)) {
             $message = [];
-            $message[] = "No data available";
+            $message[] = "No data available. Last run " . date("F j, Y");
             $writer->addRow($message);
         } else {
             $writer->addRowWithStyle($keys, $style)
@@ -383,7 +383,9 @@ class Hookextract extends App {
         $writer->openToFile('php://output');
         if (count($oldData) == 1) {
             if (empty($newData)) {
-                $writer->addRows($oldData);
+                $message = [];
+                $message[] = "No data available. Last run " . date("F j, Y");
+                $writer->addRow($message);
             } else {
                 $writer->addRowWithStyle($newKeys, $style)
                         ->addRows($newData);
