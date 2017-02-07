@@ -194,10 +194,9 @@ class Hookextract extends App {
   
     /**
      * Update strings with symbol '|' - get last substring after '|'
-     * @param array $keys
      * @param array $output
      */
-    public function checkStrings($keys, &$output) {
+    public function checkStrings(&$output) {
         // get last substring after "|"
             foreach($output as &$line){
                 foreach($line as &$value){
@@ -242,8 +241,7 @@ class Hookextract extends App {
         $this->parseData($data_arch, $headers, $output);
         
         // change data with '|'
-        $keys = array_keys($headers);
-        $this->checkStrings($keys, $output);
+        $this->checkStrings($output);
 
         // server part
         $iniMapper = new paramsMapper($db);
