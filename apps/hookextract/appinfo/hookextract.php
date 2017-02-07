@@ -206,7 +206,8 @@ class Hookextract extends App {
     public function dbGetXls($formtype, $datefrom, $dateto, $db, $user) {
         $headers = [];
         $output = [];
-
+        //$outputSorted = [];
+$user = 'ddg3';
         $mapper = new EntryMapper($db);
         $data = $mapper->findByFormType($formtype, $datefrom, $dateto, $user);
         $this->parseData($data, $headers, $output);
@@ -215,6 +216,7 @@ class Hookextract extends App {
         $data_arch = $archiveMapper->findByDate($datefrom, $dateto, $user);
         $this->parseData($data_arch, $headers, $output);
         $keys = array_keys($headers);
+        $this->orderData($keys, $output);
 
         $content = $this->exportToNewFile($output, $keys);
 
@@ -239,6 +241,20 @@ class Hookextract extends App {
                 $output[$line->getFormid()][$line->getKey()] = $line->getValue();
             }
         }
+    }
+    
+    /**
+     * Order data in the output array
+     * @param array $keys
+     * @param array $output
+     */
+    public function orderData($keys, &$output) {
+        $outputSorted = [];
+        $outputSortedLine = array_fill_keys($keys, "");
+        foreach ($output as $outputLine) {
+            $outputSorted[] = array_merge($outputSortedLine, $outputLine);
+        }
+        $output = $outputSorted;
     }
 
     /**
@@ -311,6 +327,7 @@ class Hookextract extends App {
                 }
                 file_put_contents($localFileName, $contents);
                 $keys = array_keys($headers);
+                $this->orderData($keys, $output);
                 $content = $this->exportToExistingFile($localFileName, $output, $keys);
                 unlink($localFileName);
                 chdir("..");
@@ -319,6 +336,7 @@ class Hookextract extends App {
                 unlink($fileName);
                 $file = $folder->newFile($fileName);
                 $keys = array_keys($headers);
+                $this->orderData($keys, $output);
                 $content = $this->exportToNewFile($output, $keys);
                 unlink($fileName);
                 chdir("..");
@@ -392,6 +410,7 @@ class Hookextract extends App {
             }
         } else {
             $oldKeys = array_shift($oldData);
+            $this->orderData($oldKeys, $newData);
             $writer->addRowWithStyle($oldKeys, $style)
                     ->addRows($oldData)
                     ->addRows($newData);
