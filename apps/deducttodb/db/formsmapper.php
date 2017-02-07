@@ -48,7 +48,10 @@ class FormsMapper extends Mapper {
 // 		     '(oc_observation_node.createdat >= "' . $from . '" AND oc_observation_node.createdat <= "' .
 // 		     $to
 // 		     . '" AND oc_observation_node.id = oc_forms.onodeid)';
-        $sql = 'select * from `*PREFIX*deduct_forms` where createdat >= "' . $from . '" AND createdat <= "' . $to . '"';
+        //$sql = 'select * from `*PREFIX*deduct_forms` where createdat >= "' . $from . '" AND createdat <= "' . $to . '"';
+        $sql = 'select `*PREFIX*deduct_forms`.* from `*PREFIX*deduct_forms` '.
+        		' inner JOIN `*PREFIX*deduct_observation_node` as onode on onode.uuid = `*PREFIX*deduct_forms`.uuid ' .
+        		' where `*PREFIX*deduct_forms`.createdat >= "' . $from . '" AND `*PREFIX*deduct_forms`.createdat <= "' . $to . '" ';
 
         try {
             return $this->findEntities($sql, [], $limit, $offset);

@@ -9,8 +9,13 @@ use \OC\Files\Filesystem;
 use OCA\DeductToDB\Db\paramsMapper;
 use OCA\DeductToDB\Db\EntryArchiveMapper;
 use OCA\DeductToDB\Db\EntryMapper;
+use Box\Spout\Writer\WriterFactory;
+use Box\Spout\Reader\ReaderFactory;
+use Box\Spout\Common\Type;
+use Box\Spout\Writer\Style\StyleBuilder;
 
 require_once "phpexcel/Classes/PHPExcel.php";
+require_once "spout/Autoloader/autoload.php";
 
 class Hookextract extends App {
 
@@ -46,7 +51,7 @@ class Hookextract extends App {
         $container->registerService('XmlFactory', function ($c) {
             return new XmlFactory($c->query('RootStorage'));
         });
-        
+
         $this->runJob();
     }
 
@@ -59,20 +64,21 @@ class Hookextract extends App {
     }
 
     public function runJob() {
+
         $iniMapper = new \OCA\DeductToDB\Db\paramsMapper($this->getContainer()->getServer()->getDb());
         $confParam = "conf";
         $pregBrackets = "/\[(.*?)\]/";
         $apprSуmbols = '/[^a-zA-Z0-9\-\._]/';
 
-        $maxConf = 10;
+        $maxConf = 20;
         $counter = 1;
-        
-        
+
+
 
         $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
+//echo "recurr=" . $recurr ."\n";
         while (!empty($recurr)) {
 
-            
             $begin = $iniMapper->findByNameWithDefault("conf" . $counter . "_begin", "");
             $begin_selection = $iniMapper->findByNameWithDefault("conf" . $counter . "_begin_selection", "");
             $end_selection = $iniMapper->findByNameWithDefault("conf" . $counter . "_end_selection", "");
@@ -89,54 +95,55 @@ class Hookextract extends App {
                 $end_selection = date("Y-m-d", $end_selection_date);
             }
 
-
-            $lastrun = $iniMapper->findByNameWithDefault("conf" . $counter . "_lastrun", "");
+            $lastrun = false;
+            $lastrun = $iniMapper->findByNameWithDefault("conf" . $counter . "_lastrun", false);
             $active = $iniMapper->findByNameWithDefault("conf" . $counter . "_active", "-");
             $reqUsers = $iniMapper->findManyByName("conf" . $counter . "_user");
-
-            $today = date_create();
-
-            $lastrun_time = date_create($lastrun);
-
-            if ($lastrun_time) {
-                $interval = date_diff($today, $lastrun_time);
-                $ddiff = $interval->format("%a");
-            }
-
-            if (($ddiff >= 0 || !$lastrun_time) && $active != "-") {
+//echo "counter=".$counter." $recurr=".$recurr."  lastrun=".$lastrun." \n";
+            if (($this->checkRecurrency($recurr, $lastrun) || !$lastrun) && $active != "-") {
+                echo "test \n";
                 $app = $this; //new \OCA\Hookextract\AppInfo\Hookextract();
                 $storage = $this->userfolder;
                 if (!$storage) {
                     $storage = $this->root;
-                }                               
-                
+                }
+
+                $label = $iniMapper->findByNameWithDefault("conf" . $counter . "_label", "*");
+
+
+
                 $today = date_create();
                 $today_str = $today->format('Ymd');
                 $fileName = $iniMapper->findByNameWithDefault("conf" . $counter . "_saveFilename", $today_str . '.xlsx');
-                
-                //check [timestamp] format
+
                 $foundedMatches = preg_match($pregBrackets, $fileName, $timestamp);
                 // 1. replace the forbidden symbols with a gap
-                $model = preg_replace($apprSуmbols,' ', $timestamp[1]);
+                $model = preg_replace($apprSуmbols, ' ', $timestamp[1]);
                 if ($foundedMatches > 0) {
                     $time = $today->format($model);
-                    if (date_create_from_format($model, $time) !== FALSE) {   
+                    if (date_create_from_format($model, $time) !== FALSE) {
                         // it's a date
                         $anyDate = $time;
-                    }
-                    else  $anyDate = $model; 
-                // 2. change fileName according to [timestamp]
-                $fileName = preg_replace($pregBrackets, '_' .$anyDate, $fileName);
+                    } else
+                        $anyDate = $model;
+                    // 2. change fileName according to [timestamp]
+                    $fileName = preg_replace($pregBrackets, '_' . $anyDate, $fileName);
                 }
-                else 
-                {   // replace forbidden symbols with a gap
+                else {   // replace forbidden symbols with a gap
                     $fileName = preg_replace($pregBrackets, '_', $fileName);
                 }
 
                 $formtype = $iniMapper->findByNameWithDefault("conf" . $counter . "_formtype", "*");
-                              
-                $app->exportToServer($formtype, $begin_selection, $end_selection, 
-                		$this->getContainer()->getServer()->getDb(), $storage, $reqUsers, $fileName);
+
+                $predelete = $iniMapper->findByNameWithDefault("conf" . $counter . "_filepredelete", "-");
+
+                //	echo "label = " . $label. "\n";
+
+
+
+                $fileName = str_replace("[timestamp]", $today_str, $fileName);
+
+                $app->exportToServer($formtype, $begin_selection, $end_selection, $this->getContainer()->getServer()->getDb(), $storage, $reqUsers, $fileName, $predelete);
 
                 $today = date_create();
                 $today_str = $today->format('Y-m-d H:i:s');
@@ -144,9 +151,51 @@ class Hookextract extends App {
             }
 
             $counter++;
-
+//echo "counter=" . $counter ."\n";
             $recurr = $iniMapper->findByNameWithDefault("conf" . $counter . "_recurrency", "");
+
+//echo "recurr=" . $recurr ."\n";
         }
+    }
+
+    /**
+     * Check the recurrency settings
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function checkRecurrency($recurrency, $lastrun) {
+        if (!$lastrun) {
+            return true;
+        }
+
+        $min_constant = 1;
+
+        $today = date_create();
+        $lastrun_time = date_create($lastrun);
+
+        if ($lastrun_time) {
+            $interval = date_diff($today, $lastrun_time);
+            $ddiff = $interval->format("%a");
+        }
+        if ($recurrency === "daily") {
+            if ($ddiff > $min_constant) {
+                return true;
+//echo "ddiff=".$ddiff." run_daily \n";
+            }
+        } elseif ($recurrency === "monthly") {
+            $interval = date_diff($today, $lastrun_time);
+            $mdiff = $interval->format("%m");
+            if ($mdiff > $min_constant) {
+                return true;
+            }
+        } elseif ($recurrency === "yearly") {
+            $interval = date_diff($today, $lastrun_time);
+            $mdiff = $interval->format("%y");
+            if ($mdiff > $min_constant) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -157,7 +206,7 @@ class Hookextract extends App {
     public function dbGetXls($formtype, $datefrom, $dateto, $db, $user) {
         $headers = [];
         $output = [];
-
+        
         $mapper = new EntryMapper($db);
         $data = $mapper->findByFormType($formtype, $datefrom, $dateto, $user);
         $this->parseData($data, $headers, $output);
@@ -166,7 +215,8 @@ class Hookextract extends App {
         $data_arch = $archiveMapper->findByDate($datefrom, $dateto, $user);
         $this->parseData($data_arch, $headers, $output);
         $keys = array_keys($headers);
-        
+        $this->orderData($keys, $output);
+
         $content = $this->exportToNewFile($output, $keys);
 
         return $content;
@@ -191,7 +241,21 @@ class Hookextract extends App {
             }
         }
     }
-  
+    
+    /**
+     * Order data in the output array
+     * @param array $keys
+     * @param array $output
+     */
+    public function orderData($keys, &$output) {
+        $outputSorted = [];
+        $outputSortedLine = array_fill_keys($keys, "");
+        foreach ($output as $outputLine) {
+            $outputSorted[] = array_merge($outputSortedLine, $outputLine);
+        }
+        $output = $outputSorted;
+    }
+    
     /**
      * Update strings with symbol '|' - get last substring after '|'
      * @param array $output
@@ -205,7 +269,7 @@ class Hookextract extends App {
                 }
             }
     }
-    
+
     /**
      * Export data to an Excel file on server
      * @param type $formtype
@@ -216,36 +280,42 @@ class Hookextract extends App {
      * @param type $user
      * @throws StorageException
      */
-    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $users, $fileName) {
+    private function exportToServer($formtype, $datefrom, $dateto, $db, $folder, $users, $fileName, $predelete) {
         $headers = [];
         $output = [];
-        
+        $data = [];
+        $data_arch = [];
+
         foreach ($users as $user) {
+            // echo "counter data= " . count($data). "\n";
+            $mapper = new EntryMapper($db);
+            $data1 = [];
 
-          $mapper = new EntryMapper($db);
-          $data1 = $mapper->findByFormType($formtype, $datefrom, $dateto, $user->getValue());
-          foreach($data1 as $line1){
-          	$data[] = $line1;
-          }
-          //$data = array_merge($data, $data1);
+            $data1 = $mapper->findByFormType($formtype, $datefrom, $dateto, $user->getValue());
+            //    echo "findformbytype=".count($data1) ."\n";
+            foreach ($data1 as $line1) {
+                $data[] = $line1;
+            }
+            //$data = array_merge($data, $data1);
 
-          $archiveMapper = new EntryArchiveMapper($db);
-          $data_arch1 = $archiveMapper->findByDate($datefrom, $dateto, $user->getValue());
-          foreach($data_arch1 as $arch_line1){
-          	$data_arch[] = $arch_line1;
-          }
-          //$data_arch = array_merge($data_arch, $data_arch1);
+            $archiveMapper = new EntryArchiveMapper($db);
+
+            $data_arch1 = [];
+            $data_arch1 = $archiveMapper->findByDate($datefrom, $dateto, $user->getValue());
+            foreach ($data_arch1 as $arch_line1) {
+                $data_arch[] = $arch_line1;
+            }
+            //$data_arch = array_merge($data_arch, $data_arch1);
         }
-        
+
         $this->parseData($data, $headers, $output);
         $this->parseData($data_arch, $headers, $output);
         
-        // change data with '|'
+         // change data with '|'
         $this->checkStrings($output);
 
         // server part
         $iniMapper = new paramsMapper($db);
-        
 
         // check if file exists and write to it if possible
         try {
@@ -253,24 +323,36 @@ class Hookextract extends App {
                 $file = $folder->get($fileName);
                 $storage = $file->getStorage();
                 $filepath = $file->getInternalPath();
-                $contents = $storage->file_get_contents($filepath);
-                
-                if(strlen($contents) <= 0){
-                	throw new \OCP\Files\NotFoundException("File not found");
+
+                if ($predelete == '+') {
+                    echo "Predeletion is active.\n";
+                    $result = $storage->unlink('' . $filepath);
+                    echo "Delete result = " . $result . "\n";
                 }
-                
+                $contents = $storage->file_get_contents($filepath);
+
+                if (strlen($contents) <= 0) {
+                    throw new \OCP\Files\NotFoundException("File not found");
+                }
+
                 chdir("temp");
-                
-                file_put_contents($fileName, $contents);             
-                
-                $content = $this->exportToExistingFile($fileName, $output);
-                unlink($fileName);
+//echo "filename=" . $fileName . "\n";
+                $localFileName = substr(strrchr($fileName, "/"), 1);
+                if (!$localFileName) {
+                    $localFileName = $fileName;
+                }
+                file_put_contents($localFileName, $contents);
+                $keys = array_keys($headers);
+                $this->orderData($keys, $output);
+                $content = $this->exportToExistingFile($localFileName, $output, $keys);
+                unlink($localFileName);
                 chdir("..");
             } catch (\OCP\Files\NotFoundException $e) {
-            	chdir("temp");
-            	unlink($fileName);
+                chdir("temp");
+                unlink($fileName);
                 $file = $folder->newFile($fileName);
-                //$keys = array_keys($headers);
+                $keys = array_keys($headers);
+                $this->orderData($keys, $output);
                 $content = $this->exportToNewFile($output, $keys);
                 unlink($fileName);
                 chdir("..");
@@ -290,32 +372,20 @@ class Hookextract extends App {
      * @return type $content
      */
     private function exportToNewFile($output, $keys) {
-        $objPHPExcel = new \PHPExcel();
-        
-        $objPHPExcel->getProperties()->setTitle("Extraction")
-                ->setSubject("Extraction")
-                ->setDescription("Extraction")
-                ->setKeywords("Extraction");
-        $objPHPExcel->setActiveSheetIndex(0);
-        $objPHPExcel->getActiveSheet()->fromArray($keys, null, 'A1');
-        $objPHPExcel->getActiveSheet()->getStyle('A1:AZ1')->getFont()->setBold(true);
-        $objPHPExcel->getActiveSheet()->fromArray($output, null, 'A2');
 
-        foreach (range('A', 'Z') as $column) {
-            $aColumn = 'A' . $column;
-            if ($objPHPExcel->getActiveSheet()->getCell($column . '1')->getValue()) {
-                $objPHPExcel->getActiveSheet()->getColumnDimension($column)->setAutoSize(true);
-            }
-            if ($objPHPExcel->getActiveSheet()->getCell($aColumn . '1')->getValue()) {
-                $objPHPExcel->getActiveSheet()->getColumnDimension($aColumn)->setAutoSize(true);
-            }
-        }
-
-        $objPHPExcel->getActiveSheet()->setTitle('Extraction');
-
-        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+        $writer = WriterFactory::create(Type::XLSX);
+        $style = (new StyleBuilder())->setFontBold()->build();
         ob_start();
-        $objWriter->save('php://output');
+        $writer->openToFile('php://output');
+        if (empty($output)) {
+            $message = [];
+            $message[] = "No data available. Last run " . date("F j, Y");
+            $writer->addRow($message);
+        } else {
+            $writer->addRowWithStyle($keys, $style)
+                    ->addRows($output);
+        }
+        $writer->close();
         $content = ob_get_clean();
 
         return $content;
@@ -327,21 +397,42 @@ class Hookextract extends App {
      * @param array $output
      * @return type $content
      */
-    private function exportToExistingFile($fileName, $output) {
-        try {
-            $objReader = \PHPExcel_IOFactory::createReader('Excel2007');
-            $objPHPExcel = $objReader->load($fileName);
-        } catch (Exception $ex) {
-            echo $ex->getMessage();
+    private function exportToExistingFile($fileName, $newData, $newKeys) {
+
+        $reader = ReaderFactory::create(Type::XLSX);
+        $reader->setShouldFormatDates(true);
+        $reader->open($fileName);
+
+        foreach ($reader->getSheetIterator() as $sheet) {
+            foreach ($sheet->getRowIterator() as $row) {
+                $oldData[] = $row;
+            }
         }
 
-        $objWorksheet = $objPHPExcel->setActiveSheetIndex(0);
-        $startRow = (int) $objWorksheet->getHighestRow() + 1;
-        $objWorksheet->fromArray($output, null, 'A' . $startRow);
+        $reader->close();
 
-        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+        $writer = WriterFactory::create(Type::XLSX);
+        $style = (new StyleBuilder())->setFontBold()->build();
         ob_start();
-        $objWriter->save('php://output');
+        $writer->openToFile('php://output');
+        if (count($oldData) == 1) {
+            if (empty($newData)) {
+                $message = [];
+                $message[] = "No data available. Last run " . date("F j, Y");
+                $writer->addRow($message);
+            } else {
+                $writer->addRowWithStyle($newKeys, $style)
+                        ->addRows($newData);
+            }
+        } else {
+            $oldKeys = array_shift($oldData);
+            $this->orderData($oldKeys, $newData);
+            $writer->addRowWithStyle($oldKeys, $style)
+                    ->addRows($oldData)
+                    ->addRows($newData);
+        }
+        $writer->close();
+
         $content = ob_get_clean();
 
         return $content;
