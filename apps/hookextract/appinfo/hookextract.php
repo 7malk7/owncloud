@@ -47,7 +47,7 @@ class Hookextract extends App {
             return new XmlFactory($c->query('RootStorage'));
         });
         
-        //$this->runJob();
+        $this->runJob();
     }
 
     public function getRootFolder() {
@@ -103,7 +103,7 @@ class Hookextract extends App {
                 $ddiff = $interval->format("%a");
             }
 
-            if (($ddiff >= 1 || !$lastrun_time) && $active != "-") {
+            if (($ddiff >= 0 || !$lastrun_time) && $active != "-") {
                 $app = $this; //new \OCA\Hookextract\AppInfo\Hookextract();
                 $storage = $this->userfolder;
                 if (!$storage) {
@@ -191,7 +191,22 @@ class Hookextract extends App {
             }
         }
     }
-
+  
+    /**
+     * Update strings with symbol '|' - get last substring after '|'
+     * @param array $keys
+     * @param array $output
+     */
+    public function checkStrings($keys, &$output) {
+        // get last substring after "|"
+            foreach($output as &$line){
+                foreach($line as &$value){
+                    $newCellValue = str_replace("|","",substr($value, strrpos($value, "|") , strlen($value)));    
+                    $value = $newCellValue;
+                }
+            }
+    }
+    
     /**
      * Export data to an Excel file on server
      * @param type $formtype
@@ -225,6 +240,10 @@ class Hookextract extends App {
         
         $this->parseData($data, $headers, $output);
         $this->parseData($data_arch, $headers, $output);
+        
+        // change data with '|'
+        $keys = array_keys($headers);
+        $this->checkStrings($keys, $output);
 
         // server part
         $iniMapper = new paramsMapper($db);
@@ -253,7 +272,7 @@ class Hookextract extends App {
             	chdir("temp");
             	unlink($fileName);
                 $file = $folder->newFile($fileName);
-                $keys = array_keys($headers);
+                //$keys = array_keys($headers);
                 $content = $this->exportToNewFile($output, $keys);
                 unlink($fileName);
                 chdir("..");
@@ -274,7 +293,7 @@ class Hookextract extends App {
      */
     private function exportToNewFile($output, $keys) {
         $objPHPExcel = new \PHPExcel();
-
+        
         $objPHPExcel->getProperties()->setTitle("Extraction")
                 ->setSubject("Extraction")
                 ->setDescription("Extraction")
