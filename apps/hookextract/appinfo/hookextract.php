@@ -206,8 +206,7 @@ class Hookextract extends App {
     public function dbGetXls($formtype, $datefrom, $dateto, $db, $user) {
         $headers = [];
         $output = [];
-        //$outputSorted = [];
-$user = 'ddg3';
+        
         $mapper = new EntryMapper($db);
         $data = $mapper->findByFormType($formtype, $datefrom, $dateto, $user);
         $this->parseData($data, $headers, $output);
