@@ -13,6 +13,7 @@ use Box\Spout\Writer\WriterFactory;
 use Box\Spout\Reader\ReaderFactory;
 use Box\Spout\Common\Type;
 use Box\Spout\Writer\Style\StyleBuilder;
+use OCA\DeductToDB\Storage\StorageException;
 
 require_once "phpexcel/Classes/PHPExcel.php";
 require_once "spout/Autoloader/autoload.php";
@@ -418,7 +419,7 @@ class Hookextract extends App {
         if (count($oldData) == 1) {
             if (empty($newData)) {
                 $message = [];
-                $message[] = "No data available. Last run " . date("F j, Y");
+                $message[] = "No data available. Last run " . date("F j, Y H:i");
                 $writer->addRow($message);
             } else {
                 $writer->addRowWithStyle($newKeys, $style)
