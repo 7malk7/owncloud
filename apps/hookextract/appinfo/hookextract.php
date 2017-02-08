@@ -52,8 +52,6 @@ class Hookextract extends App {
         $container->registerService('XmlFactory', function ($c) {
             return new XmlFactory($c->query('RootStorage'));
         });
-
-        $this->runJob();
     }
 
     public function getRootFolder() {
