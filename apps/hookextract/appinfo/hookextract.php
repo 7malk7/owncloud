@@ -206,7 +206,7 @@ class Hookextract extends App {
     public function dbGetXls($formtype, $datefrom, $dateto, $db, $user) {
         $headers = [];
         $output = [];
-        
+      
         $mapper = new EntryMapper($db);
         $data = $mapper->findByFormType($formtype, $datefrom, $dateto, $user);
         $this->parseData($data, $headers, $output);
@@ -379,7 +379,7 @@ class Hookextract extends App {
         $writer->openToFile('php://output');
         if (empty($output)) {
             $message = [];
-            $message[] = "No data available. Last run " . date("F j, Y");
+            $message[] = "No data available. Last run " . date("F j, Y H:i");
             $writer->addRow($message);
         } else {
             $writer->addRowWithStyle($keys, $style)

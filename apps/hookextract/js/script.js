@@ -130,11 +130,13 @@
 
                             debugger;
 
-                            $('<form action="' + url + '" method="POST">' +
+                            var $form = $('<form method="POST">' +
                                     '<input type="hidden" name="datefrom" value="' + $("#from").val() + '">' +
                                     '<input type="hidden" name="dateto" value="' + $("#to").val() + '">' +
                                     '<input type="hidden" name="formtype" value="' + $("#presel").val()[0] + '">' +
-                                    '</form>').submit();
+                                    '</form>').attr('action', url);
+                            document.body.appendChild($form[0]);
+                            $form.submit();
                         });
                     });
                 });
