@@ -1,3 +1,9 @@
+<div id="page4">
+    <form id="jobsDownload" action="/owncloud/index.php/apps/hookextract/jobsdownload" method="post" >
+         <button name="submit" id="submit_download">Download configurations for jobs</button>
+    </form>
+</div>
+
 <div id="page3">
 <form id="jobSettings" action="/timers" method="post">
   <?php 
@@ -90,6 +96,7 @@
     <button name="submit" id="submit_timers">Save</button>
 </form>
 </div>
+
 <div id="page2">
     <form id="fileUpload" action="/owncloud/index.php/apps/hookextract/upload" method="post" enctype="multipart/form-data" >
         <label for="filepath">Upload Excel file:</label>

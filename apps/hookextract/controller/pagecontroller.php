@@ -123,11 +123,11 @@ class PageController extends Controller {
         foreach ($data as $line_u) {
             $data_uniq[] = $line_u->getType();
         }
-        
+
         $users = $nodemapper->selectUsersByInterval($from, $to);
-        
+
         foreach ($users as $users_u) {
-        	$users_uniq[] = $users_u->getCreatedby();
+            $users_uniq[] = $users_u->getCreatedby();
         }
 
         $data_uniq = array_unique($data_uniq);
@@ -139,16 +139,16 @@ class PageController extends Controller {
             $strout .= "<option value='" . $line . "'>" . $line . "</option>";
         }
         $strout .= "</select></p>";
-        
+
         $strout .= "<p>Users:</p>";
         $users_uniq = array_unique($users_uniq);
         $strout .= "<br><p><select name='user' id='user'>";
         sort($users_uniq);
         foreach ($users_uniq as $line) {
-        	$strout .= "<option value='" . $line . "'>" . $line . "</option>";
+            $strout .= "<option value='" . $line . "'>" . $line . "</option>";
         }
         $strout .= "</select></p>";
-        
+
 
         $archive = $arch_mapper->findByDate($from, $to);
         if (count($archive) >= 0) {
@@ -196,7 +196,7 @@ class PageController extends Controller {
                 if (!$headers[$line->getKey()]) {
                     $headers[$line->getKey()] = [];
                 }
-                
+
                 if (!$output[$line->getFormid()]) {
                     $output[$line->getFormid()] = [$line->getKey() => $line->getValue()];
                 } else {
@@ -233,6 +233,48 @@ class PageController extends Controller {
      */
     public function doEcho($echo) {
         return new DataResponse(['echo' => $echo]);
+    }
+
+    /**
+     * Simply method that simplifies the table of parameters and unloads it
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function jobsdownload() {
+
+        $mapper = new paramsMapper($this->db);
+        $app = new \OCA\Hookextract\AppInfo\Hookextract();
+        $data = $mapper->findAllParams();
+        $content = $app->dbGetParamsTable($data);
+       
+        $today = date_create();
+        $today_str = $today->format('YmdHis');
+        return new FileResponse('JobsConfiguration_' . $today_str . '.xlsx', 'application/xml', $content);
+    }
+
+    /**
+     * Simply method that simplifies the table of parameters and unloads it
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function exportToNewFile($output, $keys) {
+
+        $writer = WriterFactory::create(Type::XLSX);
+        $style = (new StyleBuilder())->setFontBold()->build();
+        ob_start();
+        $writer->openToFile('php://output');
+        if (empty($output)) {
+            $message = [];
+            $message[] = "No data available. Last run " . date("F j, Y H:i");
+            $writer->addRow($message);
+        } else {
+            $writer->addRowWithStyle($keys, $style)
+                    ->addRows($output);
+        }
+        $writer->close();
+        $content = ob_get_clean();
+
+        return $content;
     }
 
     /**
@@ -315,8 +357,7 @@ class PageController extends Controller {
                     $inserted = $mapper->insertFromArray($keys[0], $data);
                     if ($inserted) {
                         $insertFlag = count($data);
-                    }
-                    else {
+                    } else {
                         $insertFlag = -1;
                     }
                 } else {

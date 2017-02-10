@@ -209,5 +209,5 @@ class PageController extends Controller {
     public function doEcho($echo) {
         return new DataResponse(['echo' => $echo]);
     }
-
+    
 }

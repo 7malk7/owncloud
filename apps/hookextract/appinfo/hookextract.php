@@ -205,7 +205,7 @@ class Hookextract extends App {
     public function dbGetXls($formtype, $datefrom, $dateto, $db, $user) {
         $headers = [];
         $output = [];
-      
+
         $mapper = new EntryMapper($db);
         $data = $mapper->findByFormType($formtype, $datefrom, $dateto, $user);
         $this->parseData($data, $headers, $output);
@@ -218,6 +218,72 @@ class Hookextract extends App {
 
         $content = $this->exportToNewFile($output, $keys);
 
+        return $content;
+    }
+
+    /**
+     * Get parameters table
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function dbGetParamsTable($data) {
+
+        $headers = [];
+        $output = [];
+        $arr = [];
+        $user_count = 0;
+        $headers["Configuration"] = "Configuration";
+
+        foreach ($data as $line) {
+            $str = $line->getName();
+            $conf = stristr($str, '_', true);
+            $param = substr($str, strpos($str, '_') + 1, strlen($str));
+            if (!$headers[$param]) {
+                if ($param == "user" && $user_count < 10) {
+                    $user_count++;
+                    $param .= $user_count;
+                    $headers[$param] = $param;
+                } else {
+                    $headers[$param] = $param;
+                }
+            }
+            if (!$arr[$conf]) {
+                $values["Configuration"] = $conf;
+                $values["user_count"] = 0;
+
+                if (substr($param, 0, 4) == "user") {
+                    $values["user_count"] ++;
+                    $param = "user" . $values["user_count"];
+                    $values[$param] = $line->getValue();
+                } else {
+                    $values[$param] = $line->getValue();
+                }
+                $arr[$conf] = $values;
+            } else {
+                $curr_values = $arr[$conf];
+
+                if (substr($param, 0, 4) == "user") {
+                    $curr_values["user_count"] ++;
+                    $param = "user" . $curr_values["user_count"];
+                    $curr_values[$param] = $line->getValue();
+                } else {
+                    $curr_values[$param] = $line->getValue();
+                }
+                $arr[$conf] = $curr_values;
+            }
+        }
+
+        sort($headers, SORT_NATURAL );
+        sort($arr, SORT_STRING);
+        foreach ($arr as $line) {
+            $entry = [];
+            foreach ($headers as $key) {
+                $entry[] = $line[$key];
+            }
+            $output[] = $entry;
+        }
+
+        $content = $this->exportToNewFile($output, $headers);
         return $content;
     }
 
@@ -240,7 +306,7 @@ class Hookextract extends App {
             }
         }
     }
-    
+
     /**
      * Order data in the output array
      * @param array $keys
@@ -254,19 +320,19 @@ class Hookextract extends App {
         }
         $output = $outputSorted;
     }
-    
+
     /**
      * Update strings with symbol '|' - get last substring after '|'
      * @param array $output
      */
     public function checkStrings(&$output) {
         // get last substring after "|"
-            foreach($output as &$line){
-                foreach($line as &$value){
-                    $newCellValue = str_replace("|","",substr($value, strrpos($value, "|") , strlen($value)));    
-                    $value = $newCellValue;
-                }
+        foreach ($output as &$line) {
+            foreach ($line as &$value) {
+                $newCellValue = str_replace("|", "", substr($value, strrpos($value, "|"), strlen($value)));
+                $value = $newCellValue;
             }
+        }
     }
 
     /**
@@ -309,8 +375,8 @@ class Hookextract extends App {
 
         $this->parseData($data, $headers, $output);
         $this->parseData($data_arch, $headers, $output);
-        
-         // change data with '|'
+
+        // change data with '|'
         $this->checkStrings($output);
 
         // server part
