@@ -16,6 +16,7 @@
             $("#page2").hide();
             $("#page3").hide();
             $("#page4").hide();
+            $("#page5").hide();
             $(page).show();
         }
 
@@ -70,6 +71,9 @@
         });
         $("#id4").click(function () {
             show("#page4");
+        });
+        $("#id5").click(function () {
+            show("#page5");
         });
 
 
@@ -233,6 +237,22 @@
                 window.history.back();
             }
         });
+
+
+        $('#init').on('click', function () {
+            var url = OC.generateUrl('/apps/hookextract/initialize');
+            var data = {};
+            $.post(url, data).success(function (response) {
+                $('#initialization').append(response);
+                $("#dialog").dialog({
+                    title: "Alert",
+                    autoOpen: true,
+                    height: 100,
+                    modal: true
+                });
+            })
+        });
+
 
 
     });

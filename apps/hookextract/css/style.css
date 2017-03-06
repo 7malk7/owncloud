@@ -1,14 +1,19 @@
 #hello {
-	color: red;
+    color: red;
 }
 
 div#app-content{
-	padding-left: 10px;
+    padding-left: 10px;
 }
 div#app-content-wrapper table{
-	border-collapse: collapse;
+    border-collapse: collapse;
 }
 
 div#app-content-wrapper table, th, td{
-	border: 1px solid black;
+    border: 1px solid black;
+}
+
+#initialization {
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
