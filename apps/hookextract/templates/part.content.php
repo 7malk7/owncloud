@@ -140,4 +140,5 @@
         <p>In order to perform initialization click the button below:</p>
         <button id="init">Initialization</button>
     </div>
+    <div id="spinner"></div>
 </div>

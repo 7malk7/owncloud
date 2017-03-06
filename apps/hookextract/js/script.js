@@ -17,6 +17,7 @@
             $("#page3").hide();
             $("#page4").hide();
             $("#page5").hide();
+            $('#spinner').hide();
             $(page).show();
         }
 
@@ -238,19 +239,28 @@
             }
         });
 
+        $(document)
+                .ajaxStart(function () {
+                    $('#spinner').show();
+                })
+                .ajaxStop(function () {
+                    $('#spinner').hide();
+                });
 
         $('#init').on('click', function () {
             var url = OC.generateUrl('/apps/hookextract/initialize');
             var data = {};
-            $.post(url, data).success(function (response) {
-                $('#initialization').append(response);
-                $("#dialog").dialog({
-                    title: "Alert",
-                    autoOpen: true,
-                    height: 100,
-                    modal: true
-                });
-            })
+            $.post(url, data)
+                    .success(function (response) {
+                        $('#spinner').hide();
+                        $('#initialization').append(response);
+                        $("#dialog").dialog({
+                            title: "Alert",
+                            autoOpen: true,
+                            height: 100,
+                            modal: true
+                        });
+                    })
         });
 
 

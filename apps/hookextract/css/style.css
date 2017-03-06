@@ -17,3 +17,15 @@ div#app-content-wrapper table, th, td{
     margin-top: 5px;
     margin-bottom: 5px;
 }
+
+#spinner {
+    position: absolute;
+    height: 40px;
+    width: 40px;
+    top: 50%;
+    left: 50%;
+    margin-left: -50px;
+    margin-top: -50px;
+    background: url(../img/spinner.svg);
+    background-size: 100%;
+}
