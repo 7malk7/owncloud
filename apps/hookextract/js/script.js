@@ -223,8 +223,6 @@
 
             debugger;
 
-//            $('#fileUpload').submit();
-
             $.post(url, data).success(function (response) {
                 $('#iframebox').html(response);
             });
