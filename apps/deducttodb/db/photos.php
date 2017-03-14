@@ -13,6 +13,7 @@ class Photos extends Entity implements JsonSerializable {
 	protected $latitude;
 	protected $longtitude;
 	protected $gpsaccuracy;
+        protected $direction;
 
 	public function jsonSerialize() {
 		return [
@@ -20,7 +21,8 @@ class Photos extends Entity implements JsonSerializable {
 				'$path' => $this->path,
 				'$latitude' => $this->latitude,
 				'$longtitude' => $this->longtitude,
-				'$GPS_accuracy' => $this->gpsaccuracy
+				'$GPS_accuracy' => $this->gpsaccuracy,
+                                '$direction' => $this->direction
 		];
 	}
 }

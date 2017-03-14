@@ -66,10 +66,6 @@ class PhotosMapper extends Mapper {
         $sql = 'DELETE FROM `*PREFIX*deduct_photos` ' .
                 'WHERE `onodeid` = ?';
         $stmt = $this->execute($sql, [$onodeid]);
-
-        return $row['count'];
     }
 
 }
-
-?>

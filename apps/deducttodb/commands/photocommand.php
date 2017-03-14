@@ -23,7 +23,7 @@ class PhotoCommand extends BaseCommand {
             $photoLine = $photoMapper->findByPath($path);
             if (!empty($photoLine)) {
                     $onodeid = $photoLine->getOnodeid();
-                    $rowCount = $photoMapper->deletePhotoByOnodeid($onodeid);
+                    $photoMapper->deletePhotoByOnodeid($onodeid);
             }
             return;
         }

@@ -80,7 +80,7 @@ class ProjectCommand extends BaseCommand {
                         $photoLine = $photoMapper->findByPath($path);
                         if (!empty($photoLine)) {
                                 $onodeid = $photoLine->getOnodeid();
-                                $rowCount = $photoMapper->deletePhotoByOnodeid($onodeid);
+                                $photoMapper->deletePhotoByOnodeid($onodeid);
                         }
                         break;
                     case 'node':
