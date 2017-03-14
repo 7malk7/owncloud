@@ -23,6 +23,7 @@ class ProjectFileStrategy extends BaseStrategy{
 		
 		$this->addCommand(new ProjectCommand($this->fileName, $this->xml, $this->db));
 		$this->addCommand(new UsersCommand($this->fileName, $this->xml, $this->db));
+               // $this->addCommand(new UsersCommand($this->fileName, $this->xml, $this->db));
 	}
 
 // 	public function addCommand($command){

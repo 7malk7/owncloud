@@ -1,4 +1,5 @@
 <?php
+
 namespace OCA\DeductToDB\Commands;
 
 use OCA\DeductToDB\Db\ObservationNodeMapper;
@@ -10,124 +11,137 @@ use OCA\DeductToDB\Db\PhotosMapper;
 use OCA\DeductToDB\Db\Forms;
 use OCA\DeductToDB\Db\FormsMapper;
 
-class ObservationNodeCommand extends BaseCommand{
+class ObservationNodeCommand extends BaseCommand {
 
-	public function __construct($fileName, $xml, $db){
-		parent::__construct($fileName, $xml, $db);
-	}
+    public function __construct($fileName, $xml, $db) {
+        parent::__construct($fileName, $xml, $db);
+    }
 
-	function execute($app, $mode, $versionFlag){
-		
-		if($mode == "predelete"){
-			return;
-		}
-		
-		if($versionFlag){
-			return;
-		}
+    function execute($app, $mode, $versionFlag) {
 
-		$node = new ObservationNode();
+        if ($mode == "predelete") {
 
-		$root = $app->getContainer()->query('ServerContainer')->getRootFolder();
-			
-		$finfo = \OC\Files\Filesystem::getFileInfo($this->fileName);
+            //$uuid = $this->xml->uuid;
+            $mapper = new ObservationNodeMapper($this->db);
+            $obnode = $mapper->findByUuid((string) $this->xml->uuid);
+            if ($obnode) {
+                $nodeId = $obnode->getId();
+                $mapper->deleteNodeById($nodeId);
+                //delete locations
+                $locationMapper = new LocationsMapper($this->db);
+                $locationLines = $locationMapper->findByOnodeId($nodeId);
+                if (!empty($locationLines)) {
+                    foreach ($locationLines as $line) {
+                        $id = $line->getId();
+                        $locationMapper->deleteById($id);
+                    }
+                }
+            }
 
-		$owner = \OC\Files\Filesystem::getOwner($this->fileName);
+            return;
+        }
 
-		$stat = \OC\Files\Filesystem::stat($this->fileName);
+        if ($versionFlag) {
+            return;
+        }
 
-		//$xml  = $app->getContainer()->query('XmlFactory')->makeXml($finfo->getId());
-		$mainTag = (string)$this->xml->getName();
-		$localFileName = substr(strrchr($this->fileName, "/"), 1);
-		
-		if($mainTag == 'node'){
-			$node->setTitle(trim((string)$this->xml->title));
-			$node->setUuid((string)$this->xml->uuid);
-			
-			$node->setCreatedby((string)$this->xml->created_by);
-			$node->setCreatedat((string)$this->xml->created_at);
-			
-			$localType = (string)$this->xml->attributes()->type;
-			
-			$node->setType($localType);			
-			
-			$locationCnt = 0;
-			if($this->xml->locations->loc){
-				$locationCnt = (string)$this->xml->locations->loc->count();
-			}
-			
-			$mapper = new ObservationNodeMapper($this->db);
-			$obnode = $mapper->findByUuid((string)$this->xml->uuid);
-			if(!$obnode){
-				$newNode = $mapper->insert($node);
-			}else{
-				$node->setId($obnode->getId());
-				$newNode = $mapper->update($node);
-			}
-			
-			if($locationCnt > 0){
-				for($i = 0; $i < $locationCnt; $i++){
-				$location = new Locations();
-			    $location->setLatitude((string)$this->xml->locations->loc[$i]->attributes()->lat);
-				$location->setLongtitude((string)$this->xml->locations->loc[$i]->attributes()->lon);
-				$location->setOnodeid($newNode->getId());
-				
-				$locationMapper = new LocationsMapper($this->db);
-				$locationMapper->insert($location);
-				}
-			}
-			
-			$rscCnt = (string)$this->xml->resources->children()->count();
-			if($rscCnt > 0){
-				for($i = 0; $i < $rscCnt; $i++){
-					$childType = (string)$this->xml->resources->children()[$i]->getName();
-					if($childType == "photo"){
-						$photo = new Photos();
-					
-						$photo->setOnodeid($newNode->getId());
-						$photo->setPath((string)$this->xml->resources->children()[$i]->path);
-						$photo->setLatitude((string)$this->xml->resources->children()[$i]->loc->attributes()->lat);
-						$photo->setLongtitude((string)$this->xml->resources->children()[$i]->loc->attributes()->lon);
-						
-						$photo->setGpsaccuracy((string)$this->xml->resources->children()[$i]->gps_accuracy);
-					
-						$photoMapper = new PhotosMapper($this->db);
-						$photoMapper->insert($photo);
-					}
-					if($childType == "form"){
-						$form = new Forms();
-						
-						$form->setPath((string)$this->xml->resources->children()[$i]);
-						$localFormName = substr(strrchr((string)$this->xml->resources->children()[$i], "/"), 1);
-						if(!$localFormName){
-							$localFormName = (string)$this->xml->resources->children()[$i];
-						}
-						
-						$form->setOnodeid($newNode->getId());
-						
-						$formMapper = new FormsMapper($this->db);
-						$formExists = $formMapper->findByPath($localFormName);
-						if(!$formExists){
-							$formMapper->insert($form);
-						}else{
-							$form->setId($formExists->getId());
-							$formMapper->update($form);
-						}
-					}
-					
-				}
-			}
-			
-		}
-        
-		
-		
-		
-		//$node->setTitle((string)$this->xml->attributes()->version);
-			
-		
+        $node = new ObservationNode();
 
-	}
+        $root = $app->getContainer()->query('ServerContainer')->getRootFolder();
+
+        $finfo = \OC\Files\Filesystem::getFileInfo($this->fileName);
+
+        $owner = \OC\Files\Filesystem::getOwner($this->fileName);
+
+        $stat = \OC\Files\Filesystem::stat($this->fileName);
+
+        //$xml  = $app->getContainer()->query('XmlFactory')->makeXml($finfo->getId());
+        $mainTag = (string) $this->xml->getName();
+        $localFileName = substr(strrchr($this->fileName, "/"), 1);
+
+        if ($mainTag == 'node') {
+            $node->setTitle(trim((string) $this->xml->title));
+            $node->setUuid((string) $this->xml->uuid);
+
+            $node->setCreatedby((string) $this->xml->created_by);
+            $node->setCreatedat((string) $this->xml->created_at);
+
+            $localType = (string) $this->xml->attributes()->type;
+
+            $node->setType($localType);
+
+            $locationCnt = 0;
+            if ($this->xml->locations->loc) {
+                $locationCnt = (string) $this->xml->locations->loc->count();
+            }
+
+            $mapper = new ObservationNodeMapper($this->db);
+            $obnode = $mapper->findByUuid((string) $this->xml->uuid);
+            if (!$obnode) {
+                $newNode = $mapper->insert($node);
+            } else {
+                $node->setId($obnode->getId());
+                $newNode = $mapper->update($node);
+            }
+
+            if ($locationCnt > 0) {
+                for ($i = 0; $i < $locationCnt; $i++) {
+                    $location = new Locations();
+                    $location->setLatitude((string) $this->xml->locations->loc[$i]->attributes()->lat);
+                    $location->setLongtitude((string) $this->xml->locations->loc[$i]->attributes()->lon);
+                    $location->setOnodeid($newNode->getId());
+
+                    $locationMapper = new LocationsMapper($this->db);
+                    $locationMapper->insert($location);
+                }
+            }
+
+            $rscCnt = (string) $this->xml->resources->children()->count();
+            if ($rscCnt > 0) {
+                for ($i = 0; $i < $rscCnt; $i++) {
+                    $childType = (string) $this->xml->resources->children()[$i]->getName();
+                    if ($childType == "photo") {
+                        $photo = new Photos();
+
+                        $photo->setOnodeid($newNode->getId());
+                        $photo->setPath((string) $this->xml->resources->children()[$i]->path);
+                        $photo->setLatitude((string) $this->xml->resources->children()[$i]->loc->attributes()->lat);
+                        $photo->setLongtitude((string) $this->xml->resources->children()[$i]->loc->attributes()->lon);
+
+                        $photo->setGpsaccuracy((string) $this->xml->resources->children()[$i]->gps_accuracy);
+
+                        $photoMapper = new PhotosMapper($this->db);
+                        $photoMapper->insert($photo);
+                    }
+                    if ($childType == "form") {
+                        $form = new Forms();
+
+                        $form->setPath((string) $this->xml->resources->children()[$i]);
+                        $localFormName = substr(strrchr((string) $this->xml->resources->children()[$i], "/"), 1);
+                        if (!$localFormName) {
+                            $localFormName = (string) $this->xml->resources->children()[$i];
+                        }
+
+                        $form->setOnodeid($newNode->getId());
+
+                        $formMapper = new FormsMapper($this->db);
+                        $formExists = $formMapper->findByPath($localFormName);
+                        if (!$formExists) {
+                            $formMapper->insert($form);
+                        } else {
+                            $form->setId($formExists->getId());
+                            $formMapper->update($form);
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+
+        //$node->setTitle((string)$this->xml->attributes()->version);
+    }
 
 }
 

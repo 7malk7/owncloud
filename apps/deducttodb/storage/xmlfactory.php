@@ -6,6 +6,7 @@ use OCA\DeductToDB\Strategies\ProjectFileStrategy;
 use OCA\DeductToDB\Strategies\NodeFileStrategy;
 use OCA\DeductToDB\Strategies\FormFileStrategy;
 use OCA\DeductToDB\Strategies\BaseStrategy;
+use OCA\DeductToDB\Strategies\PhotoStrategy;
 use OCA\DeductToDB\Db\NodetypeMapper;
 
 class XmlFactory{
@@ -26,12 +27,24 @@ class XmlFactory{
 	}
 	
 	public static function makeStrategy($xml, $fileName, $app, $mode){
-		if(!$xml){
-			return new BaseStrategy($fileName, $app, $mode);
-		}
-		if((string)$xml->getName() == 'project' && strpos($fileName, "project.xml") > 0) {
+
+                $name = substr($fileName, strrpos($fileName, '/') + 1);
+                $mimeType = \OC\Files\Filesystem::getMimeType($fileName);
+                
+                if(!$xml && strpos($name, "Project") !== false){
 			return new ProjectFileStrategy($fileName, $app, $mode);
 		}
+                
+                if(!$xml && $mimeType == 'image/jpeg'){
+			return new PhotoStrategy($fileName, $app, $mode);
+		}
+                
+                if(!$xml){
+			return new BaseStrategy($fileName, $app, $mode);
+		}
+		/*if((string)$xml->getName() == 'project' && strpos($fileName, "project.xml") > 0) {
+			return new ProjectFileStrategy($fileName, $app, $mode);
+		}*/
 		if(preg_match ( '/[A-Z0-9]{8}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{12}\_.*\.xml/' , $fileName )){
 			$container = $app->getContainer();
 			$db = $container->getServer()->getDb();

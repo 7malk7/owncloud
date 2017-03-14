@@ -26,6 +26,16 @@ class EntryMapper extends Mapper {
             return null;
         }
     }
+    
+      public function findByFormId($formid) {
+        $sql = 'SELECT * FROM `*PREFIX*deduct_entry` ' .
+                'WHERE `formid` = ?';
+        try {
+            return $this->findEntities($sql, [$formid]);
+        } catch (DoesNotExistException $exc) {
+            return null;
+        }
+    }
 
     public function findByFormIdAndKey($formid, $key) {
         $sql = 'SELECT * FROM `*PREFIX*deduct_entry` ' .
@@ -87,6 +97,14 @@ class EntryMapper extends Mapper {
 
         $row = $stmt->fetch();
         $stmt->closeCursor();
+        return $row['count'];
+    }
+    
+     public function deleteEntriesByFormid($formId) {
+        $sql = 'DELETE FROM `*PREFIX*deduct_entry` ' .
+                'WHERE `formid` = ?';
+        $stmt = $this->execute($sql, [$formId]);
+        
         return $row['count'];
     }
 
