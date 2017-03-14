@@ -36,6 +36,13 @@ class FormsMapper extends Mapper {
             return null;
         }
     }
+    
+       public function deleteByOnodeId($onodeid) {
+        $sql = 'DELETE FROM `*PREFIX*deduct_forms` ' .
+                'WHERE `onodeid` = ?';
+        $stmt = $this->execute($sql, [$onodeid]);
+    }
+
 
     public function findAll($limit = null, $offset = null) {
         $sql = 'SELECT * FROM `*PREFIX*deduct_forms`';

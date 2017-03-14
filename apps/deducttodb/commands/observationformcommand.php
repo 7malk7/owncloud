@@ -24,6 +24,19 @@ class ObservationFormCommand extends BaseCommand {
             // get onodeid
             $formsMapper = new FormsMapper($this->db);
             $formsLine = $formsMapper->findByPath($path);
+
+            if (!empty($formsLine)) {
+                $onodeid = $formsLine->getOnodeid();
+                $formsMapper->deleteByOnodeId($onodeid);
+                // check entry
+                $entryMapper = new EntryMapper($this->db);
+                $entryLine = $entryMapper->findByFormId($onodeid);
+                // delete entries
+                if (!empty($entryLine)) {
+                    $entryMapper->deleteEntriesByFormid($onodeid);
+                }
+            }
+            
             $onodeid = $formsLine->getOnodeid();
             // check entry
             $entryMapper = new EntryMapper($this->db);
@@ -32,7 +45,7 @@ class ObservationFormCommand extends BaseCommand {
             if (!empty($entryLine)) {
                 $rowCount = $entryMapper->deleteEntriesByFormid($onodeid);
             }
-            
+
             return;
         }
 

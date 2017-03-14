@@ -29,12 +29,10 @@ class ObservationNodeCommand extends BaseCommand {
                 $mapper->deleteNodeById($nodeId);
                 //delete locations
                 $locationMapper = new LocationsMapper($this->db);
-                $locationLines = $locationMapper->findByOnodeId($nodeId);
-                if (!empty($locationLines)) {
-                    foreach ($locationLines as $line) {
-                        $id = $line->getId();
+                $locationLine = $locationMapper->findByOnodeId($nodeId);
+                if (!empty($locationLine)) {
+                        $id = $locationLine->getId();
                         $locationMapper->deleteById($id);
-                    }
                 }
             }
 

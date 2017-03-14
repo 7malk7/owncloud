@@ -31,7 +31,7 @@ class LocationsMapper extends Mapper {
         $sql = 'SELECT * FROM `*PREFIX*deduct_locations` ' .
                 'WHERE `onodeid` = ?';
         try {
-            return $this->findEntities($sql, [$onodeId]);
+            return $this->findEntity($sql, [$onodeId]);
         } catch (DoesNotExistException $exc) {
             return null;
         }

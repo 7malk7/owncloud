@@ -76,15 +76,11 @@ class ProjectCommand extends BaseCommand {
                 $path = substr($file['name'], strrpos($file['name'], '/') + 1);
                 switch ($file['type']) {
                     case 'photo':
-
                         $photoMapper = new PhotosMapper($this->db);
-                        $photoLines = $photoMapper->findByPath($path);
-
-                        if (!empty($photoLines)) {
-                            foreach ($photoLines as $line) {
-                                $onodeid = $line->getOnodeid();
+                        $photoLine = $photoMapper->findByPath($path);
+                        if (!empty($photoLine)) {
+                                $onodeid = $photoLine->getOnodeid();
                                 $rowCount = $photoMapper->deletePhotoByOnodeid($onodeid);
-                            }
                         }
                         break;
                     case 'node':
@@ -96,12 +92,10 @@ class ProjectCommand extends BaseCommand {
                             $mapper->deleteNodeById($nodeId);
                             //delete locations
                             $locationMapper = new LocationsMapper($this->db);
-                            $locationLines = $locationMapper->findByOnodeId($nodeId);
-                            if (!empty($locationLines)) {
-                                foreach ($locationLines as $line) {
-                                    $id = $line->getId();
+                            $locationLine = $locationMapper->findByOnodeId($nodeId);
+                            if (!empty($locationLine)) {
+                                    $id = $locationLine->getId();
                                     $locationMapper->deleteById($id);
-                                }
                             }
                         }
                         break;
@@ -109,14 +103,15 @@ class ProjectCommand extends BaseCommand {
                         // get onodeid
                         $formsMapper = new FormsMapper($this->db);
                         $formsLine = $formsMapper->findByPath($path);
-                        if (!empty($entryLine)) {
+                        if (!empty($formsLine)) {
                             $onodeid = $formsLine->getOnodeid();
+                            $formsMapper->deleteByOnodeId($onodeid);
                             // check entry
                             $entryMapper = new EntryMapper($this->db);
                             $entryLine = $entryMapper->findByFormId($onodeid);
                             // delete entries
                             if (!empty($entryLine)) {
-                                $rowCount = $entryMapper->deleteEntriesByFormid($onodeid);
+                                $entryMapper->deleteEntriesByFormid($onodeid);
                             }
                         }
                         break;

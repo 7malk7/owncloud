@@ -41,7 +41,7 @@ class PhotosMapper extends Mapper {
         $sql = 'SELECT * FROM `*PREFIX*deduct_photos` ' .
                 'WHERE `path` = ?';
         try {
-            return $this->findEntities($sql, [$path]);
+            return $this->findEntity($sql, [$path]);
         } catch (DoesNotExistException $exc) {
             return null;
         }

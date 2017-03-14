@@ -20,14 +20,10 @@ class PhotoCommand extends BaseCommand {
             $path = substr($this->fileName, strrpos($this->fileName, '/') + 1);
             // get id
             $photoMapper = new PhotosMapper($this->db);
-            $photoLines = $photoMapper->findByPath($path);
-            
-            // delete entries
-            if (!empty($photoLines)) {
-                foreach ($photoLines as $line) {
-                    $onodeid = $line->getOnodeid();
+            $photoLine = $photoMapper->findByPath($path);
+            if (!empty($photoLine)) {
+                    $onodeid = $photoLine->getOnodeid();
                     $rowCount = $photoMapper->deletePhotoByOnodeid($onodeid);
-                }
             }
             return;
         }

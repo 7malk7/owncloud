@@ -104,8 +104,6 @@ class EntryMapper extends Mapper {
         $sql = 'DELETE FROM `*PREFIX*deduct_entry` ' .
                 'WHERE `formid` = ?';
         $stmt = $this->execute($sql, [$formId]);
-        
-        return $row['count'];
     }
 
 }
