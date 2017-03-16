@@ -64,15 +64,12 @@ class FileHooks {
 
         $fileType = $finfo->getType();
 
-        /*if ($fileType == "dir") {		
-        } else {*/
-            $xml = $c->query('XmlFactory')->makeXml($finfo->getId());
+        $xml = $c->query('XmlFactory')->makeXml($finfo->getId());
 
-            $strategy = \OCA\DeductToDB\Storage\XmlFactory::makeStrategy($xml, $fileName, $app, $mode);
+        $strategy = \OCA\DeductToDB\Storage\XmlFactory::makeStrategy($xml, $fileName, $app, $mode);
 
-            $strategy->execute($regMatch);
+        $strategy->execute($regMatch);
         //}
-
 //     	$file = new File();
 //     	$file->setPath($nodePath);
 //     	$file->setType($mode);

@@ -2,6 +2,7 @@
 namespace OCA\DeductToDB\Strategies;
 
 use OCA\DeductToDB\Commands\PhotoCommand;
+use OCA\DeductToDB\Commands\FilesCommand;
 
 class PhotoStrategy implements IStrategy{
 	protected $xml;
@@ -25,6 +26,7 @@ class PhotoStrategy implements IStrategy{
 		$this->mode = $mode;
 		$this->fileName = $fileName;
 		
+                $this->addCommand(new FilesCommand($this->fileName, $this->xml, $this->db));
 		$this->addCommand(new PhotoCommand($this->fileName, $this->xml, $this->db));
 		
 	}

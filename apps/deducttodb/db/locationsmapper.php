@@ -10,7 +10,7 @@ use OCP\AppFramework\Db\DoesNotExistException;
 class LocationsMapper extends Mapper {
 
     public function __construct(IDb $db) {
-        parent::__construct($db, 'locations');
+        parent::__construct($db, 'deduct_locations');
     }
 
     /**

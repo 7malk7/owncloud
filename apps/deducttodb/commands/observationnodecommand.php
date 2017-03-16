@@ -90,7 +90,10 @@ class ObservationNodeCommand extends BaseCommand {
                     $location->setOnodeid($newNode->getId());
 
                     $locationMapper = new LocationsMapper($this->db);
-                    $locationMapper->insert($location);
+                    $locationOnode = $locationMapper->findByOnodeId($newNode->getId());
+                    if (!$locationOnode) {
+                        $locationMapper->insert($location);
+                    } 
                 }
             }
 
@@ -109,7 +112,11 @@ class ObservationNodeCommand extends BaseCommand {
                         $photo->setGpsaccuracy((string) $this->xml->resources->children()[$i]->gps_accuracy);
 
                         $photoMapper = new PhotosMapper($this->db);
-                        $photoMapper->insert($photo);
+                        $photoOnode = $photoMapper->findByOnodeid($newNode->getId());
+                        if (!$photoOnode) {
+                            $photoMapper->insert($photo);
+                        }
+                        
                     }
                     if ($childType == "form") {
                         $form = new Forms();

@@ -58,7 +58,7 @@ if(array_key_exists('mode', $_REQUEST) && $_REQUEST['mode'] == 'init'){
 	\OCP\Util::connectHook('OC_Filesystem', 'copy', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
 	\OCP\Util::connectHook('OC_Filesystem', 'post_copy', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
 
-	\OCP\Util::connectHook('OC_Filesystem', 'post_write', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
+	//\OCP\Util::connectHook('OC_Filesystem', 'post_write', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
 	\OCP\Util::connectHook('OC_Filesystem', 'delete', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
 	\OCP\Util::connectHook('\OCP\Versions', 'preDelete', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
 	\OCP\Util::connectHook('\OCP\Trashbin', 'preDelete', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');

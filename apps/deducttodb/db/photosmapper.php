@@ -36,6 +36,16 @@ class PhotosMapper extends Mapper {
             return null;
         }
     }
+    
+    public function findByOnodeid($onodeid) {
+        $sql = 'SELECT * FROM `*PREFIX*deduct_photos` ' .
+                'WHERE `onodeid` = ?';
+        try {
+            return $this->findEntity($sql, [$onodeid]);
+        } catch (DoesNotExistException $exc) {
+            return null;
+        }
+    }
 
     public function findByPath($path) {
         $sql = 'SELECT * FROM `*PREFIX*deduct_photos` ' .
@@ -54,7 +64,7 @@ class PhotosMapper extends Mapper {
 
     public function observationNodeCount($onodeId) {
         $sql = 'SELECT COUNT(*) AS `count` FROM `*PREFIX*deduct_photos` ' .
-                'WHERE `onode_id` = ?';
+                'WHERE `onodeid` = ?';
         $stmt = $this->execute($sql, [$onodeId]);
 
         $row = $stmt->fetch();

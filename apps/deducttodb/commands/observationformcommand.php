@@ -37,14 +37,14 @@ class ObservationFormCommand extends BaseCommand {
                 }
             }
             
-            $onodeid = $formsLine->getOnodeid();
+           // $onodeid = $formsLine->getOnodeid();
             // check entry
-            $entryMapper = new EntryMapper($this->db);
+           /* $entryMapper = new EntryMapper($this->db);
             $entryLine = $entryMapper->findByFormId($onodeid);
             // delete entries
             if (!empty($entryLine)) {
                 $rowCount = $entryMapper->deleteEntriesByFormid($onodeid);
-            }
+            }*/
 
             return;
         }
