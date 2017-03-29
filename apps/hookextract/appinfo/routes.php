@@ -27,5 +27,6 @@ return [
     	    ['name' => 'page#timers', 'url' => '/timers', 'verb' => 'POST'],
             ['name' => 'page#upload', 'url' => '/upload', 'verb' => 'POST'],
             ['name' => 'page#jobsdownload', 'url' => '/jobsdownload', 'verb' => 'POST'],
+            ['name' => 'page#maintenance', 'url' => '/maintenance', 'verb' => 'POST'],
     ]
 ];

@@ -25,15 +25,11 @@ class XmlFactory {
 
         return $xml;
     }
-
+ 
     public static function makeStrategy($xml, $fileName, $app, $mode) {
 
         $name = substr($fileName, strrpos($fileName, '/') + 1);
         $mimeType = \OC\Files\Filesystem::getMimeType($fileName);
-
-        /* if(!$xml && strpos($name, "Project") !== false){
-          return new ProjectFileStrategy($fileName, $app, $mode);
-          } */
 
         if (!$xml && $mimeType == 'image/jpeg') {
             return new PhotoStrategy($fileName, $app, $mode);
@@ -46,13 +42,6 @@ class XmlFactory {
             return new ProjectFileStrategy($fileName, $app, $mode);
         }
 
-
-        if (!$xml) {
-            return new BaseStrategy($fileName, $app, $mode);
-        }
-        /* if((string)$xml->getName() == 'project' && strpos($fileName, "project.xml") > 0) {
-          return new ProjectFileStrategy($fileName, $app, $mode);
-          } */
         if (preg_match('/[A-Z0-9]{8}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{12}\_.*\.xml/', $fileName)) {
             $container = $app->getContainer();
             $db = $container->getServer()->getDb();

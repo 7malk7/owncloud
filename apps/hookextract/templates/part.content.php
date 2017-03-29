@@ -1,3 +1,9 @@
+<div id="page5">
+    <form id="startMaintenance" action="/owncloud/index.php/apps/hookextract/maintenance" method="post" >
+         <button name="submit" id="submit_maintenance">Start maintenance function</button>
+    </form>
+</div>
+
 <div id="page4">
     <form id="jobsDownload" action="/owncloud/index.php/apps/hookextract/jobsdownload" method="post" >
          <button name="submit" id="submit_download">Download configurations for jobs</button>

@@ -16,6 +16,28 @@ class ObservationNodeCommand extends BaseCommand {
     public function __construct($fileName, $xml, $db) {
         parent::__construct($fileName, $xml, $db);
     }
+    
+     function executeForDeleted() {
+         
+            //$uuid = $this->xml->uuid;
+            $file = substr($this->fileName,strrpos($this->fileName, '/') + 1);
+            $uuid = substr($file,0,strpos($file, '_'));
+            
+            $mapper = new ObservationNodeMapper($this->db);
+            $obnode = $mapper->findByUuid($uuid);
+            if ($obnode) {
+                $nodeId = $obnode->getId();
+                $mapper->deleteNodeById($nodeId);
+                //delete locations
+                $locationMapper = new LocationsMapper($this->db);
+                $locationLine = $locationMapper->findByOnodeId($nodeId);
+                if (!empty($locationLine)) {
+                        $id = $locationLine->getId();
+                        $locationMapper->deleteById($id);
+                }
+            }
+            return;
+     }
 
     function execute($app, $mode, $versionFlag) {
 

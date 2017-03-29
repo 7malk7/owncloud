@@ -251,6 +251,18 @@ class PageController extends Controller {
         $today_str = $today->format('YmdHis');
         return new FileResponse('JobsConfiguration_' . $today_str . '.xlsx', 'application/xml', $content);
     }
+     
+    /**
+     * Simply method that simplifies the table of parameters and unloads it
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function maintenance() {
+        $app = new \OCA\Hookextract\AppInfo\Hookextract();
+        $app->maintenanceJob();
+        $result = 'Data updated';
+        return new DataResponse($result);
+    }
 
     /**
      * Simply method that simplifies the table of parameters and unloads it

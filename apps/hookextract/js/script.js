@@ -16,6 +16,7 @@
             $("#page2").hide();
             $("#page3").hide();
             $("#page4").hide();
+            $("#page5").hide();
             $(page).show();
         }
 
@@ -39,6 +40,7 @@
             defaultDate: '-1m',
             minDate: -300
         });
+        
         $('#to').datepicker({
             selectOtherMonths: true,
             dateFormat: 'yy-mm-dd',
@@ -71,10 +73,19 @@
         $("#id4").click(function () {
             show("#page4");
         });
+        $("#id5").click(function () {
+            show("#page5");
+        });
 
+        $('#submit_maintenance').click(function () {
+            var url = OC.generateUrl('/apps/hookextract/maintenance');
+            debugger;
+            var $form = $('<form method="POST"></form>').attr('action', url);
+            document.body.appendChild($form[0]);
+            $form.submit();
+        });
 
         $('#submit_download').click(function () {
-
             var url = OC.generateUrl('/apps/hookextract/jobsdownload');
             debugger;
             var $form = $('<form method="POST"></form>').attr('action', url);

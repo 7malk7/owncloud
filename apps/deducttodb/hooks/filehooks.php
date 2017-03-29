@@ -4,6 +4,10 @@ namespace OCA\DeductToDB\Hooks;
 
 use \OCA\DeductToDB\AppInfo\DeductToDB;
 use \OCA\DeductToDB\Commands\ObservationFormCommand;
+use OCA\DeductToDB\Commands\PhotoCommand;
+use OCA\DeductToDB\Commands\ProjectCommand;
+use OCA\DeductToDB\Commands\ObservationNodeCommand;
+use OCA\DeductToDB\Db\NodetypeMapper;
 
 class FileHooks {
 
@@ -54,11 +58,45 @@ class FileHooks {
         $db = $c->getServer()->getDb();
         $root = $c->getServer()->getUserFolder();
         $logger = $c->getServer()->getLogger();
-        $logger->error("test 1", array('app' => $mode));
+        $logger->error("maintenance function", array('app' => $mode));
 
         $finfo = \OC\Files\Filesystem::getFileInfo($fileName);
 
         if (!$finfo) {
+            // for maintenance job - deleted files
+            $name = substr($fileName, strrpos($fileName, '/') + 1);
+            $type = substr($name, strrpos($name, '.') + 1);
+
+            if ($type == 'jpeg') {
+                $photoCommand = new PhotoCommand($fileName, "", $db);
+                $photoCommand->executeForDeleted();
+                return;
+            }
+
+            if (strpos($fileName, "project.xml") > 0) {
+                $projectCommand = new ProjectCommand($fileName, "", $db);
+                $projectCommand->executeForDeleted();
+                return;
+            }
+
+            if (preg_match('/[A-Z0-9]{8}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{12}\_.*\.xml/', $fileName)) {
+                $nodeType = new NodetypeMapper($db);
+                $nodes = $nodeType->findAll();
+                for ($i = 0; $i < count($nodes); $i++) {
+                    $regexp = '/[A-Z0-9]{8}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{12}\_' . $nodes[$i]->getName() . '_Node.*\.xml/';
+                    if (strpos($fileName, "Node") > 0 && preg_match($regexp, $fileName)) {
+                        $nodeCommand = new ObservationNodeCommand($fileName, "", $db);
+                        $nodeCommand->executeForDeleted();
+                        return;
+                    }
+                    $regexp = '/[A-Z0-9]{8}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{12}\_' . $nodes[$i]->getName() . '_Form.*\.xml/';
+                    if (strpos($fileName, "Form") > 0 && preg_match($regexp, $fileName)) {
+                        $formCommand = new ObservationFormCommand($fileName, "", $db);
+                        $formCommand->executeForDeleted();
+                        return;
+                    }
+                }
+            }
             return;
         }
 
@@ -67,33 +105,7 @@ class FileHooks {
         $xml = $c->query('XmlFactory')->makeXml($finfo->getId());
 
         $strategy = \OCA\DeductToDB\Storage\XmlFactory::makeStrategy($xml, $fileName, $app, $mode);
-
         $strategy->execute($regMatch);
-        //}
-//     	$file = new File();
-//     	$file->setPath($nodePath);
-//     	$file->setType($mode);
-//     	$root = $c->query('ServerContainer')->getRootFolder();
-//     	$finfo = \OC\Files\Filesystem::getFileInfo($nodePath);
-//     	$owner = \OC\Files\Filesystem::getOwner($nodePath);
-//     	$file->setCreator($owner);
-//     	$stat = \OC\Files\Filesystem::stat($nodePath);
-//     	$file->setCreatedat(date('Y-m-d H:i:s', $stat['ctime']));
-//     	$file->setModified(date('Y-m-d H:i:s', $stat['mtime']));    	
-//     	//$mapper = new FileMapper($c->getServer()->getDb());
-//     	//$mapper->insert($file);
-//     	$xml  = $c->query('XmlFactory')->makeXml($finfo->getId());
-//     	if($reader instanceof XmlReader){
-//     	   $entity = $reader->getDbEntity();
-//     	   $mapper = new ProjectsMapper($c->getServer()->getDb());
-//     	   $mapper->insert($entity);
-//     	   $userMapper = new UserMapper($c->getServer()->getDb());
-//     	   if(!$userMapper->find($owner)){
-//     	   	  $newUser = new User();
-//     	   	  $newUser->setName($owner);
-//     	   	  $userMapper->insert($newUser);
-//     	   }
-//     	}
     }
 
     public static function updated($node) {

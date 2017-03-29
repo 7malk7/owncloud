@@ -16,6 +16,29 @@ class ObservationFormCommand extends BaseCommand {
         parent::__construct($fileName, $xml, $db);
     }
 
+    
+        function executeForDeleted() {
+            //delete entries of current form
+            $path = substr($this->fileName, strrpos($this->fileName, '/') + 1);
+            // get onodeid
+            $formsMapper = new FormsMapper($this->db);
+            $formsLine = $formsMapper->findByPath($path);
+
+            if (!empty($formsLine)) {
+                $onodeid = $formsLine->getOnodeid();
+                $formsMapper->deleteByOnodeId($onodeid);
+                // check entry
+                $entryMapper = new EntryMapper($this->db);
+                $entryLine = $entryMapper->findByFormId($onodeid);
+                // delete entries
+                if (!empty($entryLine)) {
+                    $entryMapper->deleteEntriesByFormid($onodeid);
+                }
+            }
+            return;
+        }
+    
+    
     function execute($app, $mode, $versionFlag) {
 
         if ($mode == "predelete") {

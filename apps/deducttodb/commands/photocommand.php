@@ -12,6 +12,19 @@ class PhotoCommand extends BaseCommand {
     public function __construct($fileName, $xml, $db) {
         parent::__construct($fileName, $xml, $db);
     }
+    
+    function executeForDeleted( ) {
+         //delete entries of current form
+            $path = substr($this->fileName, strrpos($this->fileName, '/') + 1);
+            // get id
+            $photoMapper = new PhotosMapper($this->db);
+            $photoLine = $photoMapper->findByPath($path);
+            if (!empty($photoLine)) {
+                    $onodeid = $photoLine->getOnodeid();
+                    $photoMapper->deletePhotoByOnodeid($onodeid);
+            }
+            return;
+    }
 
     function execute($app, $mode, $versionFlag) {
 

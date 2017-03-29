@@ -20,6 +20,24 @@ class ProjectCommand extends BaseCommand {
     public function __construct($fileName, $xml, $db) {
         parent::__construct($fileName, $xml, $db);
     }
+    
+     function executeForDeleted() {
+            // delete project
+            //$folderName = substr($this->fileName, strrpos($this->fileName, '/') + 1);
+         
+           $folders = split("/", $this->fileName);
+            if (count($folders) >= 2) {
+                 $folderName = $folders[1];
+            }
+            
+           // $folderName = split("/", $this->fileName);
+            $projectMapper = new ProjectsMapper($this->db);
+            $projectLine = $projectMapper->findByFolder($folderName);
+            if (!empty($projectLine)) {
+                $uuid = $projectLine->getUuid();
+                $projectMapper->deleteByUUID($uuid);
+            }
+     }
 
     function execute($app, $mode, $versionFlag) {
 
@@ -155,6 +173,14 @@ class ProjectCommand extends BaseCommand {
 
         if (!$mapper->findByUuid((string) $this->xml->uuid)) {
             $mapper->insert($project);
+        }
+        else{
+            $project = $mapper->findByUuid((string) $this->xml->uuid);
+            $project->setName((string) $this->xml->name);
+            $project->setCreatedby((string) $this->xml->created_by);
+            $project->setCreatedat((string) $this->xml->created_at);
+            $project->setOwner((string) $this->xml->owner);
+            $mapper->update($project);
         }
     }
 
