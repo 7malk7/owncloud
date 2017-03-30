@@ -19,14 +19,14 @@
  */
 return [
     'routes' => [
-        ['name' => 'page#index', 'url' => '/', 'verb' => 'GET'],
-        ['name' => 'page#preselect', 'url' => '/preselect', 'verb' => 'POST'],
-        ['name' => 'page#select', 'url' => '/select', 'verb' => 'POST'],
-        ['name' => 'page#xlsdwnl', 'url' => '/xls', 'verb' => 'POST'],
-        ['name' => 'page#do_echo', 'url' => '/echo', 'verb' => 'POST'],
-        ['name' => 'page#timers', 'url' => '/timers', 'verb' => 'POST'],
-        ['name' => 'page#upload', 'url' => '/upload', 'verb' => 'POST'],
-        ['name' => 'page#jobsdownload', 'url' => '/jobsdownload', 'verb' => 'POST'],
-        ['name' => 'page#initialize', 'url' => '/initialize', 'verb' => 'POST'],
+            ['name' => 'page#index', 'url' => '/', 'verb' => 'GET'],
+            ['name' => 'page#preselect', 'url' => '/preselect', 'verb' => 'POST'],
+            ['name' => 'page#select', 'url' => '/select', 'verb' => 'POST'],
+            ['name' => 'page#xlsdwnl', 'url' => '/xls', 'verb' => 'POST'],
+            ['name' => 'page#do_echo', 'url' => '/echo', 'verb' => 'POST'],
+    	    ['name' => 'page#timers', 'url' => '/timers', 'verb' => 'POST'],
+            ['name' => 'page#upload', 'url' => '/upload', 'verb' => 'POST'],
+            ['name' => 'page#jobsdownload', 'url' => '/jobsdownload', 'verb' => 'POST'],
+            ['name' => 'page#maintenance', 'url' => '/maintenance', 'verb' => 'POST'],
     ]
 ];

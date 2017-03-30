@@ -9,6 +9,8 @@ use OCA\DeductToDB\Storage\XmlFactory;
 use \OC\Files\Node\File;
 use \OC\Files\Node\Folder;
 use \OC\Files\Filesystem;
+//use OCA\DeductToDB\Db\FileMaintenance;
+//use OCA\DeductToDB\Db\FileMaintenanceMapper;
 
 
 class Phphook extends App {
@@ -127,4 +129,63 @@ class Phphook extends App {
     	}    		
     
     }
+    
+     // Maintenance Function
+     public function maintenanceJob(){
+         
+               	if(!$this->root){
+    		return;
+    	}
+    	
+    	$rootDir = $this->root->getDirectoryListing();
+    	
+    	if(!$this->userfolder){
+    		return;
+    	}
+    	
+    	$userDir = $this->userfolder->getDirectoryListing();    	
+    	
+    	$classFolder = 'OC\Files\Node\Folder';
+    	$classFile = 'OC\Files\Node\File';
+    	$root = Filesystem::getRoot();
+    	
+    	foreach($userDir as $value){
+            
+            $db = $this->getContainer()->getServer()->getDb();
+            $path = substr($value->getPath(), strrpos($value->getPath(), '/') + 1);
+            
+            // check entry in file_maintenance table
+            $fileMaintenance = new FileMaintenanceMapper($db);
+            
+            $fileLine = $fileMaintenance->findByFilename($path);
+            if (!empty($fileLine)) {
+                $etag_old = $fileLine->getEtag();               
+            }
+            else{
+                
+            }
+
+    		if($value instanceof $classFolder){
+    			$this->logger->error("maintenance folder:", array('app' => $value->getPath() ));
+                        $fileHooks = new FileHooks($value->getPath());
+                        $fileHooks->writeFileEntry($value->getPath(), 'created');
+    		}
+    		if($value instanceof $classFile){
+    			$fileName = $value->getPath();
+    			$regexp = '/'.$root.'/';
+    			preg_replace($pattern, '', $fileName);
+    			$fileName = str_replace($root, '', $fileName);
+    			$this->logger->error("maintenance file:", array('app' => $fileName ));
+                        
+                        $fileHooks = new FileHooks($value->getPath());
+                        $fileHooks->writeFileEntry($value->getPath(), 'created');
+    			//\OCA\DeductToDB\Hooks\FileHooks::writeFileEntry($fileName, 'init');
+    		}
+    		
+    	}
+    		
+    
+    }
+    
+    
 }

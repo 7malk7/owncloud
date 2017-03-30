@@ -45,10 +45,9 @@ $logger = $container->getServer()->getLogger();
 
 if(array_key_exists('mode', $_REQUEST) && $_REQUEST['mode'] == 'init'){
 	$app->initialization();
-
+             
 }else{
-
-	\OCP\Util::connectHook('OC_Filesystem', 'post_create', 'OCA\DeductToDB\Hooks\FileHooks', 'created');
+	/*\OCP\Util::connectHook('OC_Filesystem', 'post_create', 'OCA\DeductToDB\Hooks\FileHooks', 'created');
 	\OCP\Util::connectHook('OC_Filesystem', 'post_write', 'OCA\DeductToDB\Hooks\FileHooks', 'updated');
 	\OCP\Util::connectHook('OC_Filesystem', 'post_update', 'OCA\DeductToDB\Hooks\FileHooks', 'updated');
 
@@ -58,7 +57,7 @@ if(array_key_exists('mode', $_REQUEST) && $_REQUEST['mode'] == 'init'){
 	\OCP\Util::connectHook('OC_Filesystem', 'copy', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
 	\OCP\Util::connectHook('OC_Filesystem', 'post_copy', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
 
-	\OCP\Util::connectHook('OC_Filesystem', 'post_write', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
+	//\OCP\Util::connectHook('OC_Filesystem', 'post_write', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
 	\OCP\Util::connectHook('OC_Filesystem', 'delete', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
 	\OCP\Util::connectHook('\OCP\Versions', 'preDelete', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
 	\OCP\Util::connectHook('\OCP\Trashbin', 'preDelete', 'OCA\DeductToDB\Hooks\FileHooks', 'fs_deleted');
@@ -73,5 +72,5 @@ if(array_key_exists('mode', $_REQUEST) && $_REQUEST['mode'] == 'init'){
 
 	\OCP\Util::connectHook('\OCA\Files_Trashbin\Trashbin', 'post_moveToTrash', 'OCA\DeductToDB\Hooks\FileHooks', 'post_movetotrash');
 	\OCP\Util::connectHook('\OCA\Files_Trashbin\Trashbin', 'post_restore', 'OCA\DeductToDB\Hooks\FileHooks', 'trashbin_post_restore');
-
+*/
 }

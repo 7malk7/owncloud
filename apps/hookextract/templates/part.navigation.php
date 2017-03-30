@@ -1,7 +1,5 @@
 <ul>
-    <li id="id1">
-        <a href="#">Create new report</a>
-    </li>
+    <li id="id1"><a href="#">Create new report</a></li>
     <li id="id2">
         <a href="#">Upload Excel Report</a>
     </li>
@@ -12,6 +10,6 @@
         <a href="#">Download Jobs</a>
     </li>
     <li id="id5">
-        <a href="#">Initialization</a>
+        <a href="#">Maintenance Function</a>
     </li>
 </ul>

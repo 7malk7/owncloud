@@ -16,10 +16,48 @@ class ObservationNodeCommand extends BaseCommand {
     public function __construct($fileName, $xml, $db) {
         parent::__construct($fileName, $xml, $db);
     }
+    
+     function executeForDeleted() {
+         
+            //$uuid = $this->xml->uuid;
+            $file = substr($this->fileName,strrpos($this->fileName, '/') + 1);
+            $uuid = substr($file,0,strpos($file, '_'));
+            
+            $mapper = new ObservationNodeMapper($this->db);
+            $obnode = $mapper->findByUuid($uuid);
+            if ($obnode) {
+                $nodeId = $obnode->getId();
+                $mapper->deleteNodeById($nodeId);
+                //delete locations
+                $locationMapper = new LocationsMapper($this->db);
+                $locationLine = $locationMapper->findByOnodeId($nodeId);
+                if (!empty($locationLine)) {
+                        $id = $locationLine->getId();
+                        $locationMapper->deleteById($id);
+                }
+            }
+            return;
+     }
 
     function execute($app, $mode, $versionFlag) {
 
         if ($mode == "predelete") {
+
+            //$uuid = $this->xml->uuid;
+            $mapper = new ObservationNodeMapper($this->db);
+            $obnode = $mapper->findByUuid((string) $this->xml->uuid);
+            if ($obnode) {
+                $nodeId = $obnode->getId();
+                $mapper->deleteNodeById($nodeId);
+                //delete locations
+                $locationMapper = new LocationsMapper($this->db);
+                $locationLine = $locationMapper->findByOnodeId($nodeId);
+                if (!empty($locationLine)) {
+                        $id = $locationLine->getId();
+                        $locationMapper->deleteById($id);
+                }
+            }
+
             return;
         }
 
@@ -74,7 +112,10 @@ class ObservationNodeCommand extends BaseCommand {
                     $location->setOnodeid($newNode->getId());
 
                     $locationMapper = new LocationsMapper($this->db);
-                    $locationMapper->insert($location);
+                    $locationOnode = $locationMapper->findByOnodeId($newNode->getId());
+                    if (!$locationOnode) {
+                        $locationMapper->insert($location);
+                    } 
                 }
             }
 
@@ -93,7 +134,11 @@ class ObservationNodeCommand extends BaseCommand {
                         $photo->setGpsaccuracy((string) $this->xml->resources->children()[$i]->gps_accuracy);
 
                         $photoMapper = new PhotosMapper($this->db);
-                        $photoMapper->insert($photo);
+                        $photoOnode = $photoMapper->findByOnodeid($newNode->getId());
+                        if (!$photoOnode) {
+                            $photoMapper->insert($photo);
+                        }
+                        
                     }
                     if ($childType == "form") {
                         $form = new Forms();

@@ -14,6 +14,12 @@ use Box\Spout\Reader\ReaderFactory;
 use Box\Spout\Common\Type;
 use Box\Spout\Writer\Style\StyleBuilder;
 use OCA\DeductToDB\Storage\StorageException;
+use \OCA\DeductToDB\Hooks\FileHooks;
+use OCA\DeductToDB\Db\FileMaintenance;
+use OCA\DeductToDB\Db\FileMaintenanceMapper;
+use OCA\DeductToDB\Db\ActivityMapper;
+
+
 
 require_once "phpexcel/Classes/PHPExcel.php";
 require_once "spout/Autoloader/autoload.php";
@@ -519,6 +525,273 @@ class Hookextract extends App {
      */
     public function initialization() {
         
+    }
+    
+    
+    /**
+     * Simply method that posts back the payload of the request
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function maintenanceJob() {
+
+        if (!$this->root) {
+            return;
+        }
+        if (!$this->userfolder) {
+            return;
+        }
+        // at first -> check deleted files - table oc_activity
+        $this->checkDeletedFiles();
+        // at second -> check tree of files
+        $this->checkExistingFiles();
+    }
+    
+    
+    //part of Maintenance Function for existing files
+    public function checkExistingFiles() {
+
+        $root = Filesystem::getRoot();
+        $db = $this->getContainer()->getServer()->getDb();
+
+        $userDir = $this->userfolder->getDirectoryListing();
+
+        $classFolder = 'OC\Files\Node\Folder';
+        $classFile = 'OC\Files\Node\File';
+        foreach ($userDir as $value) {
+
+            //$path = substr($value->getPath(), strrpos($value->getPath(), 'files/') + 5);
+            $path = str_replace($root, '', $value->getPath());
+            $flagUpdate = "false";
+
+            $fileName = str_replace($root, '', $value->getPath());
+
+            $today = date_create();
+            $today_str = $today->format('Y-m-d H:i:s');
+            $info = \OC\Files\Filesystem::getFileInfo($path);
+
+            // evaluate Etag
+            $newEtag = $info->getEtag();
+
+            // check entry in file_maintenance table
+            $fileMaintenance = new FileMaintenanceMapper($db);
+            $fileLine = $fileMaintenance->findByPath($path);
+            if (!empty($fileLine)) {
+                $oldEtag = $fileLine->getEtag();
+                $oldFlag = $fileLine->getDeleted();
+                if ($oldEtag != $newEtag || $oldFlag == 'X') {
+                    $fileLine->setLastupdate((string) $today_str);
+                    $fileLine->setEtag((string) $info->getEtag());
+                    $fileLine->setDeleted("");
+
+                    $newNode = $fileMaintenance->update($fileLine);
+                    $flagUpdate = "true";
+                }
+            } else {
+                $newFile = new FileMaintenance();
+                $newFile->setPath(trim((string) $path));
+                $newFile->setLastupdate((string) $today_str);
+                $newFile->setEtag((string) $info->getEtag());
+                $newFile->setDeleted("");
+
+                $newNode = $fileMaintenance->insert($newFile);
+                $flagUpdate = "true";
+            }
+
+            if ($value instanceof $classFolder) {
+                if ($flagUpdate == "true") {
+                    $this->logger->error("Maintenance job for folder:", array('app' => $path));
+                    $fileHooks = new FileHooks($path);
+                    $fileHooks->writeFileEntry($path, 'created');
+                }
+                $this->checkFolder($value);
+            }
+            if ($value instanceof $classFile) {
+                if ($flagUpdate == "true") {
+                    $this->logger->error("Maintenance job for file:", array('app' => $fileName));
+                    $fileHooks = new FileHooks($path);
+                    $fileHooks->writeFileEntry($path, 'created');
+                }
+            }
+        }
+    }
+
+    //part of Maintenance Function for deleted files
+    public function checkDeletedFiles() {
+        $db = $this->getContainer()->getServer()->getDb();
+
+        $activity = new ActivityMapper($db);
+        $activityEntries = $activity->findByType('file_deleted');
+
+        foreach ($activityEntries as $file) {
+
+            $fileName = $file->getFile();
+            // update maintenance table
+            $flagUpdate = "false";
+            $today_str = date_create()->format('Y-m-d H:i:s');
+
+            $fileMaintenance = new FileMaintenanceMapper($db);
+            $fileLine = $fileMaintenance->findByPath($fileName);
+            if (!empty($fileLine)) {
+                if (!$fileLine->getDeleted()) {
+                    $fileLine->setDeleted("X");
+                    $fileLine->setLastupdate((string) $today_str);
+                    $newNode = $fileMaintenance->update($fileLine);
+                    $flagUpdate = "true";
+                }
+            } else {
+
+                $newFile = new FileMaintenance();
+                $newFile->setPath(trim((string) $fileName));
+                $newFile->setLastupdate((string) $today_str);
+                $newFile->setDeleted("X");
+                $info = \OC\Files\Filesystem::getFileInfo($fileName);
+                if ($info) {
+                    $newFile->setEtag((string) $info->getEtag());
+                }
+                $newNode = $fileMaintenance->insert($newFile);
+                $flagUpdate = "true";
+            }
+
+
+            ////////////////////////////////////////////////////////////////////
+            $point = strrpos($fileName, '.');
+            if ($point == 0) {
+                // find all files in this folder
+                    $this->logger->error("Maintenance job->deleted:", array('app' => $fileName));
+                    $fileHooks = new FileHooks($fileName);
+                    $fileHooks->writeFileEntry($fileName, 'predelete');
+                    
+                    $this->checkDeletedFolder($fileName);
+            } else {
+                if ($flagUpdate == "true") {
+                    $this->logger->error("Maintenance job->deleted:", array('app' => $fileName));
+                    $fileHooks = new FileHooks($fileName);
+                    $fileHooks->writeFileEntry($fileName, 'predelete2');
+                }
+            }
+            ////////////////////////////////////////////////////////////////////
+        }
+    }
+    
+      public function checkDeletedFolder($folderName) {
+          
+          $db = $this->getContainer()->getServer()->getDb();
+          $activity = new ActivityMapper($db);
+          $string = $folderName."%.%";
+          $folderFiles = $activity->findByFolder($string);
+          
+            foreach ($folderFiles as $file) {
+                $fileName = $file->getFile();
+            // update maintenance table
+            $flagUpdate = "false";
+            $today_str = date_create()->format('Y-m-d H:i:s');
+
+            $fileMaintenance = new FileMaintenanceMapper($db);
+            $fileLine = $fileMaintenance->findByPath($fileName);
+            if (!empty($fileLine)) {
+                if (!$fileLine->getDeleted()) {
+                    $fileLine->setDeleted("X");
+                    $fileLine->setLastupdate((string) $today_str);
+                    $newNode = $fileMaintenance->update($fileLine);
+                    $flagUpdate = "true";
+                }
+            } else {
+
+                $newFile = new FileMaintenance();
+                $newFile->setPath(trim((string) $fileName));
+                $newFile->setLastupdate((string) $today_str);
+                $newFile->setDeleted("X");
+                $info = \OC\Files\Filesystem::getFileInfo($fileName);
+                if ($info) {
+                    $newFile->setEtag((string) $info->getEtag());
+                }
+                $newNode = $fileMaintenance->insert($newFile);
+                $flagUpdate = "true";
+            }
+
+
+            ////////////////////////////////////////////////////////////////////
+            $point = strrpos($fileName, '.');
+            if ($point == 0) {
+                // find all files in this folder
+                    $this->logger->error("Maintenance job->deleted:", array('app' => $fileName));
+                    $fileHooks = new FileHooks($fileName);
+                    $fileHooks->writeFileEntry($fileName, 'predelete');
+                    
+                    $this->checkDeletedFolder($fileName);
+            } else {
+                if ($flagUpdate == "true") {
+                    $this->logger->error("Maintenance job->deleted:", array('app' => $fileName));
+                    $fileHooks = new FileHooks($fileName);
+                    $fileHooks->writeFileEntry($fileName, 'predelete');
+                }
+            }
+            }
+          
+      }
+
+    public function checkFolder($folder) {
+        $listing = $folder->getDirectoryListing();
+
+        $classFolder = 'OC\Files\Node\Folder';
+        $classFile = 'OC\Files\Node\File';
+        $root = Filesystem::getRoot();
+        $db = $this->getContainer()->getServer()->getDb();
+
+        foreach ($listing as $value) {
+
+            $path = str_replace($root, '', $value->getPath());
+            $flagUpdate = "false";
+
+            $fileName = str_replace($root, '', $value->getPath());
+
+            $today = date_create();
+            $today_str = $today->format('Y-m-d H:i:s');
+            $info = \OC\Files\Filesystem::getFileInfo($path);
+            $newEtag = $info->getEtag();
+
+            // check entry in file_maintenance table
+            $fileMaintenance = new FileMaintenanceMapper($db);
+            $fileLine = $fileMaintenance->findByPath($path);
+            if (!empty($fileLine)) {
+                $oldEtag = $fileLine->getEtag();
+                $oldFlag = $fileLine->getDeleted();
+                if ($oldEtag != $newEtag || $oldFlag == 'X') {
+                    $fileLine->setLastupdate((string) $today_str);
+                    $fileLine->setEtag((string) $info->getEtag());
+                    $fileLine->setDeleted("");
+
+                    $newNode = $fileMaintenance->update($fileLine);
+                    $flagUpdate = "true";
+                }
+            } else {
+                $newFile = new FileMaintenance();
+                $newFile->setPath(trim((string) $path));
+                $newFile->setLastupdate((string) $today_str);
+                $newFile->setEtag((string) $info->getEtag());
+                $newFile->setDeleted("");
+
+                $newNode = $fileMaintenance->insert($newFile);
+                $flagUpdate = "true";
+            }
+
+            if ($value instanceof $classFolder) {
+                if ($flagUpdate == "true") {
+                    $this->logger->error("Maintenance job for folder:", array('app' => $value->getPath()));
+                    $fileHooks = new FileHooks($path);
+                    $fileHooks->writeFileEntry($path, 'created');
+                }
+                $this->checkFolder($value);
+            }
+            if ($value instanceof $classFile) {
+                if ($flagUpdate == "true") {
+                    $this->logger->error("Maintenance job for file:", array('app' => $fileName));
+                    $fileHooks = new FileHooks($path);
+                    $fileHooks->writeFileEntry($path, 'created');
+                }
+            }
+        }
     }
 
 }

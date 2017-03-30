@@ -16,9 +16,59 @@ class ObservationFormCommand extends BaseCommand {
         parent::__construct($fileName, $xml, $db);
     }
 
+    
+        function executeForDeleted() {
+            //delete entries of current form
+            $path = substr($this->fileName, strrpos($this->fileName, '/') + 1);
+            // get onodeid
+            $formsMapper = new FormsMapper($this->db);
+            $formsLine = $formsMapper->findByPath($path);
+
+            if (!empty($formsLine)) {
+                $onodeid = $formsLine->getOnodeid();
+                $formsMapper->deleteByOnodeId($onodeid);
+                // check entry
+                $entryMapper = new EntryMapper($this->db);
+                $entryLine = $entryMapper->findByFormId($onodeid);
+                // delete entries
+                if (!empty($entryLine)) {
+                    $entryMapper->deleteEntriesByFormid($onodeid);
+                }
+            }
+            return;
+        }
+    
+    
     function execute($app, $mode, $versionFlag) {
 
         if ($mode == "predelete") {
+            //delete entries of current form
+            $path = substr($this->fileName, strrpos($this->fileName, '/') + 1);
+            // get onodeid
+            $formsMapper = new FormsMapper($this->db);
+            $formsLine = $formsMapper->findByPath($path);
+
+            if (!empty($formsLine)) {
+                $onodeid = $formsLine->getOnodeid();
+                $formsMapper->deleteByOnodeId($onodeid);
+                // check entry
+                $entryMapper = new EntryMapper($this->db);
+                $entryLine = $entryMapper->findByFormId($onodeid);
+                // delete entries
+                if (!empty($entryLine)) {
+                    $entryMapper->deleteEntriesByFormid($onodeid);
+                }
+            }
+            
+           // $onodeid = $formsLine->getOnodeid();
+            // check entry
+           /* $entryMapper = new EntryMapper($this->db);
+            $entryLine = $entryMapper->findByFormId($onodeid);
+            // delete entries
+            if (!empty($entryLine)) {
+                $rowCount = $entryMapper->deleteEntriesByFormid($onodeid);
+            }*/
+
             return;
         }
 
@@ -168,6 +218,22 @@ class ObservationFormCommand extends BaseCommand {
 
 
         //$node->setTitle((string)$this->xml->attributes()->version);
+    }
+
+    public static function deleteEntry($data, $db) {
+
+        foreach ($data as $file) {
+
+            $formsMapper = new FormsMapper($db);
+            $formsLine = $formsMapper->findByPath($file['name']);
+            $onodeid = $formsLine->getOnodeid();
+
+            $entryMapper = new EntryMapper($db);
+            $entryLine = $entryMapper->findByFormId($onodeid);
+            if (!empty($entryLine)) {
+                $rowCount = $entryMapper->deleteEntriesByFormid($onodeid);
+            }
+        }
     }
 
 }

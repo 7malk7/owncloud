@@ -246,25 +246,22 @@ class PageController extends Controller {
         $app = new \OCA\Hookextract\AppInfo\Hookextract();
         $data = $mapper->findAllParams();
         $content = $app->dbGetParamsTable($data);
-
+       
         $today = date_create();
         $today_str = $today->format('YmdHis');
         return new FileResponse('JobsConfiguration_' . $today_str . '.xlsx', 'application/xml', $content);
     }
-
+     
     /**
      * Simply method that simplifies the table of parameters and unloads it
      * @NoAdminRequired
      * @NoCSRFRequired
      */
-    public function initialize() {
-        try {
-            $deductToDB = new \OCA\DeductToDB\AppInfo\DeductToDB();
-            $deductToDB->initialization();
-            return new DataResponse('<div id="dialog">Initialization successful</div>');
-        } catch (\Exception $e) {
-            return new DataResponse('<div id="dialog">Initialization error</div>');
-        }
+    public function maintenance() {
+        $app = new \OCA\Hookextract\AppInfo\Hookextract();
+        $app->maintenanceJob();
+        $result = 'Data updated';
+        return new DataResponse($result);
     }
 
     /**

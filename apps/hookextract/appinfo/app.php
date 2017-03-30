@@ -19,6 +19,7 @@ $app = new Hookextract($_REQUEST);
 $container = $app->getContainer();
 
 \OCP\Backgroundjob::addRegularTask('\OCA\HookExtract\Cron\ExtractTask', 'run');
+//\OCP\Backgroundjob::addRegularTask('\OCA\HookExtract\Cron\MaintenanceTask', 'run');
 
 // $rootFolder = $container->getRootFolder();
 // $userFolder = $container->getUserFolder();

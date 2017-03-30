@@ -17,7 +17,6 @@
             $("#page3").hide();
             $("#page4").hide();
             $("#page5").hide();
-            $('#spinner').hide();
             $(page).show();
         }
 
@@ -41,6 +40,7 @@
             defaultDate: '-1m',
             minDate: -300
         });
+        
         $('#to').datepicker({
             selectOtherMonths: true,
             dateFormat: 'yy-mm-dd',
@@ -77,9 +77,15 @@
             show("#page5");
         });
 
+        $('#submit_maintenance').click(function () {
+            var url = OC.generateUrl('/apps/hookextract/maintenance');
+            debugger;
+            var $form = $('<form method="POST"></form>').attr('action', url);
+            document.body.appendChild($form[0]);
+            $form.submit();
+        });
 
         $('#submit_download').click(function () {
-
             var url = OC.generateUrl('/apps/hookextract/jobsdownload');
             debugger;
             var $form = $('<form method="POST"></form>').attr('action', url);
@@ -223,6 +229,8 @@
 
             debugger;
 
+//            $('#fileUpload').submit();
+
             $.post(url, data).success(function (response) {
                 $('#iframebox').html(response);
             });
@@ -236,31 +244,6 @@
                 window.history.back();
             }
         });
-
-        $(document)
-                .ajaxStart(function () {
-                    $('#spinner').show();
-                })
-                .ajaxStop(function () {
-                    $('#spinner').hide();
-                });
-
-        $('#init').on('click', function () {
-            var url = OC.generateUrl('/apps/hookextract/initialize');
-            var data = {};
-            $.post(url, data)
-                    .success(function (response) {
-                        $('#spinner').hide();
-                        $('#initialization').append(response);
-                        $("#dialog").dialog({
-                            title: "Alert",
-                            autoOpen: true,
-                            height: 100,
-                            modal: true
-                        });
-                    })
-        });
-
 
 
     });
