@@ -14,6 +14,7 @@
 namespace OCA\HookExtract\Controller;
 
 use OCP\IRequest;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\DownloadResponse;
@@ -246,22 +247,29 @@ class PageController extends Controller {
         $app = new \OCA\Hookextract\AppInfo\Hookextract();
         $data = $mapper->findAllParams();
         $content = $app->dbGetParamsTable($data);
-       
+
         $today = date_create();
         $today_str = $today->format('YmdHis');
         return new FileResponse('JobsConfiguration_' . $today_str . '.xlsx', 'application/xml', $content);
     }
-     
+
     /**
      * Simply method that simplifies the table of parameters and unloads it
      * @NoAdminRequired
      * @NoCSRFRequired
      */
     public function maintenance() {
-        $app = new \OCA\Hookextract\AppInfo\Hookextract();
-        $app->maintenanceJob();
-        $result = 'Data updated';
-        return new DataResponse($result);
+        try {
+            $app = new \OCA\Hookextract\AppInfo\Hookextract();
+            $app->maintenanceJob();
+            $result = 'Data updated';
+            $status = Http::STATUS_OK;
+        } catch (\Exception $e) {
+            $result = $e->getMessage();
+            $status = Http::STATUS_INTERNAL_SERVER_ERROR;
+        }
+        
+        return new DataResponse($result, $status);
     }
 
     /**

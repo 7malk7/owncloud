@@ -1,7 +1,7 @@
 <div id="page5">
-    <form id="startMaintenance" action="/owncloud/index.php/apps/hookextract/maintenance" method="post" >
-         <button name="submit" id="submit_maintenance">Start maintenance function</button>
-    </form>
+    <button id="submit_maintenance">Start maintenance function</button>
+    <div id="initialization"></div>
+    <div id="spinner"></div>
 </div>
 
 <div id="page4">

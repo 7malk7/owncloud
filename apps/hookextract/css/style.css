@@ -13,11 +13,6 @@ div#app-content-wrapper table, th, td{
     border: 1px solid black;
 }
 
-#initialization {
-    margin-top: 5px;
-    margin-bottom: 5px;
-}
-
 #spinner {
     position: absolute;
     height: 40px;

@@ -5,6 +5,7 @@
  * later. See the COPYING file.
  *
  * @author Alexy Yurchanka <maly@abat.de>
+ * @author Aleh Kalenchanka <malk@abat.de>
  * @copyright Alexy Yurchanka 2016
  */
 
@@ -17,6 +18,7 @@
             $("#page3").hide();
             $("#page4").hide();
             $("#page5").hide();
+            $('#spinner').hide();
             $(page).show();
         }
 
@@ -24,15 +26,8 @@
         show("#page1");
 
         var curDate = new Date();
-        //var dateString = curDate.getFullYear() + "-" + ("0"+(curDate.getMonth()+1)).slice(-2) + "-" +
-        //("0" + curDate.getDate()).slice(-2);
-        //$("#to").val(dateString);
 
         var curDate2 = curDate.setMonth(curDate.getMonth() - 1);
-
-        //dateString = curDate.getFullYear() + "-" + ("0"+(curDate.getMonth()+1)).slice(-2) + "-" +
-        //("0" + curDate.getDate()).slice(-2);
-        //$("#from").val(dateString);
 
         $('#from').datepicker({
             selectOtherMonths: true,
@@ -40,7 +35,7 @@
             defaultDate: '-1m',
             minDate: -300
         });
-        
+
         $('#to').datepicker({
             selectOtherMonths: true,
             dateFormat: 'yy-mm-dd',
@@ -77,12 +72,29 @@
             show("#page5");
         });
 
-        $('#submit_maintenance').click(function () {
+        $('#submit_maintenance').on("click", function (e) {
+            var SUCCESS = 'Maintenance has been performed successfully';
+            var FAIL = 'Maintenance has failed';
             var url = OC.generateUrl('/apps/hookextract/maintenance');
-            debugger;
-            var $form = $('<form method="POST"></form>').attr('action', url);
-            document.body.appendChild($form[0]);
-            $form.submit();
+            var respDiv = document.createElement('div');
+            respDiv.setAttribute('id', 'dialog');
+            document.getElementById("page5").appendChild(respDiv);
+            $.ajax(url, {
+                method: 'POST',
+                beforeSend: function () {
+                    $('#spinner').show();
+                },
+                complete: function (xhr) {
+                    $('#spinner').hide();
+                    respDiv.innerHTML = (xhr.status == 200) ? SUCCESS : FAIL;
+                    $('#dialog').dialog({
+                        title: "Message",
+                        autoOpen: true,
+                        height: 100,
+                        modal: true
+                    });
+                }
+            })
         });
 
         $('#submit_download').click(function () {
@@ -156,10 +168,10 @@
                             debugger;
 
                             var $form = $('<form method="POST">' +
-                                    '<input type="hidden" name="datefrom" value="' + $("#from").val() + '">' +
-                                    '<input type="hidden" name="dateto" value="' + $("#to").val() + '">' +
-                                    '<input type="hidden" name="formtype" value="' + $("#presel").val()[0] + '">' +
-                                    '</form>').attr('action', url);
+                                '<input type="hidden" name="datefrom" value="' + $("#from").val() + '">' +
+                                '<input type="hidden" name="dateto" value="' + $("#to").val() + '">' +
+                                '<input type="hidden" name="formtype" value="' + $("#presel").val()[0] + '">' +
+                                '</form>').attr('action', url);
                             document.body.appendChild($form[0]);
                             $form.submit();
                         });
@@ -225,11 +237,13 @@
 
         $('#submit_upload').click(function () {
             var url = OC.generateUrl('/apps/hookextract/upload');
-            var data = {filepath: $("#filepath").val()};
+            var data = {
+                filepath: $("#filepath").val()
+            };
 
             debugger;
 
-//            $('#fileUpload').submit();
+            //            $('#fileUpload').submit();
 
             $.post(url, data).success(function (response) {
                 $('#iframebox').html(response);
