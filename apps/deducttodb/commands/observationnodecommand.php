@@ -115,7 +115,10 @@ class ObservationNodeCommand extends BaseCommand {
                     $locationOnode = $locationMapper->findByOnodeId($newNode->getId());
                     if (!$locationOnode) {
                         $locationMapper->insert($location);
-                    } 
+                    } else {
+                        $location->setId($locationOnode->getId());
+                        $locationMapper->update($location);
+                    }
                 }
             }
 
@@ -137,6 +140,9 @@ class ObservationNodeCommand extends BaseCommand {
                         $photoOnode = $photoMapper->findByOnodeid($newNode->getId());
                         if (!$photoOnode) {
                             $photoMapper->insert($photo);
+                        } else {
+                            $photo->setId($photoOnode->getId());
+                            $photoMapper->update($photo);
                         }
                         
                     }
