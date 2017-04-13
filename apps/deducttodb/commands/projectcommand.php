@@ -21,16 +21,12 @@ class ProjectCommand extends BaseCommand {
         parent::__construct($fileName, $xml, $db);
     }
     
-     function executeForDeleted() {
-            // delete project
-            //$folderName = substr($this->fileName, strrpos($this->fileName, '/') + 1);
-         
+     function executeForDeleted() {   
            $folders = split("/", $this->fileName);
             if (count($folders) >= 2) {
                  $folderName = $folders[1];
             }
             
-           // $folderName = split("/", $this->fileName);
             $projectMapper = new ProjectsMapper($this->db);
             $projectLine = $projectMapper->findByFolder($folderName);
             if (!empty($projectLine)) {

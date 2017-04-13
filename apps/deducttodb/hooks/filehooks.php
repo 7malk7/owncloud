@@ -62,13 +62,9 @@ class FileHooks {
 
         $finfo = \OC\Files\Filesystem::getFileInfo($fileName);
 
-        if (!$finfo || $mode == "predelete") {
-           
-            // for maintenance job - deleted files
+        if (!$finfo || $mode == "predelete") { // for deleted files
             $name = substr($fileName, strrpos($fileName, '/') + 1);
             $type = substr($name, strrpos($name, '.') + 1);
-            
-            // $logger->error("maintenance function DELETEEEEDDD!!!!!!!!! $name $type", array('app' => $mode));
 
             if ($type == 'jpeg') {
                 $photoCommand = new PhotoCommand($fileName, "", $db);

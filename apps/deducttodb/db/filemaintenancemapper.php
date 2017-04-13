@@ -26,7 +26,6 @@ class FileMaintenanceMapper extends Mapper {
     public function findByPath($path) {
         $sql = 'SELECT * FROM `*PREFIX*deduct_file_maintenance` ' .
                 'WHERE `path` = ?';
-        //return $this->findEntity($sql, [$filename]);
         try {
             return $this->findEntity($sql, [$path]);
         } catch (DoesNotExistException $exc) {

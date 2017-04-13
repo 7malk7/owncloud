@@ -16,31 +16,29 @@ class ObservationFormCommand extends BaseCommand {
         parent::__construct($fileName, $xml, $db);
     }
 
-    
-        function executeForDeleted() {
-            //delete entries of current form
-            $path = substr($this->fileName, strrpos($this->fileName, '/') + 1);
-            // get onodeid
-            $formsMapper = new FormsMapper($this->db);
-            $formsLine = $formsMapper->findByPath($path);
+    function executeForDeleted() {
+        //delete entries of current form
+        $path = substr($this->fileName, strrpos($this->fileName, '/') + 1);
+        // get onodeid
+        $formsMapper = new FormsMapper($this->db);
+        $formsLine = $formsMapper->findByPath($path);
 
-            if (!empty($formsLine)) {
-                $onodeid = $formsLine->getOnodeid();
-                $formsMapper->deleteByOnodeId($onodeid);
-                // check entry
-                $entryMapper = new EntryMapper($this->db);
-                $entryLine = $entryMapper->findByFormId($onodeid);
-                // delete entries
-                if (!empty($entryLine)) {
-                    $entryMapper->deleteEntriesByFormid($onodeid);
-                }
+        if (!empty($formsLine)) {
+            $onodeid = $formsLine->getOnodeid();
+            $formsMapper->deleteByOnodeId($onodeid);
+            // check entry
+            $formId = $formsLine->getId();
+            $entryMapper = new EntryMapper($this->db);
+            $entryLine = $entryMapper->findByFormId($formId);
+            // delete entries
+            if (!empty($entryLine)) {
+                $entryMapper->deleteEntriesByFormid($formId);
             }
-            return;
         }
-    
-    
-    function execute($app, $mode, $versionFlag) {
+        return;
+    }
 
+    function execute($app, $mode, $versionFlag) {
         if ($mode == "predelete") {
             //delete entries of current form
             $path = substr($this->fileName, strrpos($this->fileName, '/') + 1);
@@ -52,22 +50,14 @@ class ObservationFormCommand extends BaseCommand {
                 $onodeid = $formsLine->getOnodeid();
                 $formsMapper->deleteByOnodeId($onodeid);
                 // check entry
+                $formId = $formsLine->getId();
                 $entryMapper = new EntryMapper($this->db);
-                $entryLine = $entryMapper->findByFormId($onodeid);
+                $entryLine = $entryMapper->findByFormId($formId);
                 // delete entries
                 if (!empty($entryLine)) {
-                    $entryMapper->deleteEntriesByFormid($onodeid);
+                    $entryMapper->deleteEntriesByFormid($formId);
                 }
             }
-            
-           // $onodeid = $formsLine->getOnodeid();
-            // check entry
-           /* $entryMapper = new EntryMapper($this->db);
-            $entryLine = $entryMapper->findByFormId($onodeid);
-            // delete entries
-            if (!empty($entryLine)) {
-                $rowCount = $entryMapper->deleteEntriesByFormid($onodeid);
-            }*/
 
             return;
         }
@@ -76,17 +66,11 @@ class ObservationFormCommand extends BaseCommand {
             return;
         }
 
-        //$node = new Forms();
-
         $root = $app->getContainer()->query('ServerContainer')->getRootFolder();
-
         $finfo = \OC\Files\Filesystem::getFileInfo($this->fileName);
-
         $owner = \OC\Files\Filesystem::getOwner($this->fileName);
-
         $stat = \OC\Files\Filesystem::stat($this->fileName);
 
-        //$xml  = $app->getContainer()->query('XmlFactory')->makeXml($finfo->getId());
         $mainTag = (string) $this->xml->getName();
         $localFileName = substr(strrchr($this->fileName, "/"), 1);
 
@@ -98,7 +82,7 @@ class ObservationFormCommand extends BaseCommand {
 
         if ($mainTag == 'form') {
             $formsMapper = new FormsMapper($this->db);
-            $node = $formsMapper->findByPath($localFileName); //$this->fileName
+            $node = $formsMapper->findByPath($localFileName);
 
             if (!$node) {
                 $node = new Forms();
@@ -141,13 +125,11 @@ class ObservationFormCommand extends BaseCommand {
 
             for ($i = 0; $i < $tagsCount; $i++) {
                 $curTag = $this->xml->children()[$i];
-
                 $entryMapper = new EntryMapper($this->db);
                 $newEntry = false;
                 if ($curTag->getName() == "entry") {
                     // check if the entry is already in the table
                     $entryLine = $entryMapper->findByFormIdAndKey($node->getId(), (string) $curTag->key);
-
                     if ($entryLine) {
                         // if line exists - we put a change document with CHANGE
                     } else {
@@ -170,60 +152,11 @@ class ObservationFormCommand extends BaseCommand {
                     }
                 }
             }
-
-
-
-// 			if(preg_match ( '/Evidence/' , $localTitle ) && preg_match ("/Evidence Form/", $localType)){
-// 				$node->setType("1");
-// 			}
-// 			$locationCnt = (string)$this->xml->locations->loc->count();
-// 			$mapper = new ObservationNodeMapper($this->db);
-// 			$newNode = $mapper->insert($node);
-// 			if($locationCnt > 0){
-// 				for($i = 0; $i < $locationCnt; $i++){
-// 				$location = new Locations();
-// 			    $location->setLatitude((string)$this->xml->locations->loc[$i]->attributes()->lat);
-// 				$location->setLongtitude((string)$this->xml->locations->loc[$i]->attributes()->lon);
-// 				$location->setOnode_id($newNode->getId());
-// 				$locationMapper = new LocationsMapper($this->db);
-// 				$locationMapper->insert($location);
-// 				}
-// 			}
-// 			$rscCnt = (string)$this->xml->resources->children()->count();
-// 			if($rscCnt > 0){
-// 				for($i = 0; $i < $rscCnt; $i++){
-// 					$childType = (string)$this->xml->resources->children()[$i]->getName();
-// // 					if($childType == "photo"){
-// // 						$photo = new Photos();
-// // 						$photo->setOnode_id($newNode->getId());
-// // 						$photo->setPath((string)$this->xml->resources->children()[$i]->path);
-// // 						$photo->setLatitude((string)$this->xml->resources->children()[$i]->loc->attributes()->lat);
-// // 						$photo->setLongtitude((string)$this->xml->resources->children()[$i]->loc->attributes()->lon);
-// // 						$photo->setGpsaccuracy((string)$this->xml->resources->children()[$i]->gps_accuracy);
-// // 						$photoMapper = new PhotosMapper($this->db);
-// // 						$photoMapper->insert($photo);
-// // 					}
-// // 					if($childType == "form"){
-// // 						$form = new Forms();
-// // 						$form->setPath((string)$this->xml->resources->children()[$i]);
-// // 						$form->setOnode_id($newNode->getId());
-// // 						$formMapper = new FormsMapper($this->db);
-// // 						$formMapper->insert($form);
-// // 					}
-// 				}
-// 			}
         }
-
-
-
-
-        //$node->setTitle((string)$this->xml->attributes()->version);
     }
 
     public static function deleteEntry($data, $db) {
-
         foreach ($data as $file) {
-
             $formsMapper = new FormsMapper($db);
             $formsLine = $formsMapper->findByPath($file['name']);
             $onodeid = $formsLine->getOnodeid();

@@ -16,34 +16,30 @@ class ObservationNodeCommand extends BaseCommand {
     public function __construct($fileName, $xml, $db) {
         parent::__construct($fileName, $xml, $db);
     }
-    
-     function executeForDeleted() {
-         
-            //$uuid = $this->xml->uuid;
-            $file = substr($this->fileName,strrpos($this->fileName, '/') + 1);
-            $uuid = substr($file,0,strpos($file, '_'));
-            
-            $mapper = new ObservationNodeMapper($this->db);
-            $obnode = $mapper->findByUuid($uuid);
-            if ($obnode) {
-                $nodeId = $obnode->getId();
-                $mapper->deleteNodeById($nodeId);
-                //delete locations
-                $locationMapper = new LocationsMapper($this->db);
-                $locationLine = $locationMapper->findByOnodeId($nodeId);
-                if (!empty($locationLine)) {
-                        $id = $locationLine->getId();
-                        $locationMapper->deleteById($id);
-                }
+
+    function executeForDeleted() {
+        $file = substr($this->fileName, strrpos($this->fileName, '/') + 1);
+        $uuid = substr($file, 0, strpos($file, '_'));
+
+        $mapper = new ObservationNodeMapper($this->db);
+        $obnode = $mapper->findByUuid($uuid);
+        if ($obnode) {
+            $nodeId = $obnode->getId();
+            $mapper->deleteNodeById($nodeId);
+            //delete locations
+            $locationMapper = new LocationsMapper($this->db);
+            $locationLine = $locationMapper->findByOnodeId($nodeId);
+            if (!empty($locationLine)) {
+                $id = $locationLine->getId();
+                $locationMapper->deleteById($id);
             }
-            return;
-     }
+        }
+        return;
+    }
 
     function execute($app, $mode, $versionFlag) {
 
         if ($mode == "predelete") {
-
-            //$uuid = $this->xml->uuid;
             $mapper = new ObservationNodeMapper($this->db);
             $obnode = $mapper->findByUuid((string) $this->xml->uuid);
             if ($obnode) {
@@ -53,8 +49,8 @@ class ObservationNodeCommand extends BaseCommand {
                 $locationMapper = new LocationsMapper($this->db);
                 $locationLine = $locationMapper->findByOnodeId($nodeId);
                 if (!empty($locationLine)) {
-                        $id = $locationLine->getId();
-                        $locationMapper->deleteById($id);
+                    $id = $locationLine->getId();
+                    $locationMapper->deleteById($id);
                 }
             }
 
@@ -66,16 +62,11 @@ class ObservationNodeCommand extends BaseCommand {
         }
 
         $node = new ObservationNode();
-
         $root = $app->getContainer()->query('ServerContainer')->getRootFolder();
-
         $finfo = \OC\Files\Filesystem::getFileInfo($this->fileName);
-
         $owner = \OC\Files\Filesystem::getOwner($this->fileName);
-
         $stat = \OC\Files\Filesystem::stat($this->fileName);
 
-        //$xml  = $app->getContainer()->query('XmlFactory')->makeXml($finfo->getId());
         $mainTag = (string) $this->xml->getName();
         $localFileName = substr(strrchr($this->fileName, "/"), 1);
 
@@ -144,7 +135,6 @@ class ObservationNodeCommand extends BaseCommand {
                             $photo->setId($photoOnode->getId());
                             $photoMapper->update($photo);
                         }
-                        
                     }
                     if ($childType == "form") {
                         $form = new Forms();
@@ -169,11 +159,6 @@ class ObservationNodeCommand extends BaseCommand {
                 }
             }
         }
-
-
-
-
-        //$node->setTitle((string)$this->xml->attributes()->version);
     }
 
 }
