@@ -109,19 +109,12 @@ class EntryArchiveMapper extends Mapper {
             $date = isset($dateMatch[0]) ? $dateMatch[0] : "";
             for ($i = 0; $i < count($keys); $i++) {
                 $dbRow = array();
-//                $dbRow = '( ' . $counter . ', '
-//                        . "'" . $keys[$i] . "'" . ', '
-//                        . "'" . $dataRow[$i] . "'" . ', '
-//                        . "'" . $today . "'" . ', '
-//                        . "'" . $date . "'" . ', '
-//                        . "'" . $creator . "'" . ')';
                 array_push($dbRow, $counter, $keys[$i], $dataRow[$i], $today, $date, $creator);
                 $dbData[] = $dbRow;
                 unset($dbRow);
             }
         }
-//        $values = implode(', ', $dbData);
-//        return $values;
+
         return $dbData;
     }
 
