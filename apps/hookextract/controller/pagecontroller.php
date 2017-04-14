@@ -259,6 +259,7 @@ class PageController extends Controller {
      * @NoCSRFRequired
      */
     public function maintenance() {
+        $logger = $this->container->getServer()->getLogger();
         try {
             $app = new \OCA\Hookextract\AppInfo\Hookextract();
             $app->maintenanceJob();
@@ -266,6 +267,7 @@ class PageController extends Controller {
             $status = Http::STATUS_OK;
         } catch (\Exception $e) {
             $result = $e->getMessage();
+            $logger->error($result, array('app' => 'Hookextract'));
             $status = Http::STATUS_INTERNAL_SERVER_ERROR;
         }
         

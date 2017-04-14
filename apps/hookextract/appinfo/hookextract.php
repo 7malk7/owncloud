@@ -567,17 +567,13 @@ class Hookextract extends App {
                 $newFile->setPath(trim((string) $fileName));
                 $newFile->setLastupdate((string) $today_str);
                 $newFile->setDeleted("X");
-                $hash = $file->hash('md5');
-                if (!empty($hash)) {
-                    $newFile->setHash($hash);
-                }
                 $newNode = $fileMaintenance->insert($newFile);
                 $flagUpdate = "true";
             }
 
             $point = strrpos($fileName, '.');
             if ($point == 0) { // it's a folder
-// find all the files in this folder
+            // find all the files in this folder
                 $this->logger->error("Maintenance job->deleted:", array('app' => $fileName));
                 $fileHooks = new FileHooks($fileName);
                 $fileHooks->writeFileEntry($fileName, 'predelete');
@@ -592,6 +588,10 @@ class Hookextract extends App {
         }
     }
 
+    /**
+     * Go through all the files inside deleted directory
+     * @param type $folderName
+     */
     public function checkDeletedFolder($folderName) {
         $db = $this->getContainer()->getServer()->getDb();
         $activity = new ActivityMapper($db);
@@ -600,26 +600,21 @@ class Hookextract extends App {
 
         foreach ($folderFiles as $file) {
             $fileName = $file->getFile();
-// update maintenance table
             $today_str = date_create()->format('Y-m-d H:i:s');
 
             $fileMaintenance = new FileMaintenanceMapper($db);
             $fileLine = $fileMaintenance->findByPath($fileName);
-            if (!empty($fileLine)) {
+            if (!empty($fileLine)) { // update entry in maintenance table
                 if (!$fileLine->getDeleted()) {
                     $fileLine->setDeleted("X");
                     $fileLine->setLastupdate((string) $today_str);
                     $newNode = $fileMaintenance->update($fileLine);
                 }
-            } else {
+            } else { // insert entry in maintenance table
                 $newFile = new FileMaintenance();
                 $newFile->setPath(trim((string) $fileName));
                 $newFile->setLastupdate((string) $today_str);
                 $newFile->setDeleted("X");
-                $hash = $file->hash('md5');
-                if (!empty($hash)) {
-                    $newFile->setHash($hash);
-                }
                 $newNode = $fileMaintenance->insert($newFile);
             }
 
@@ -677,26 +672,26 @@ class Hookextract extends App {
         $today_str = $today->format('Y-m-d H:i:s');
         $info = \OC\Files\Filesystem::getFileInfo($path);
 
-// check entry in file_maintenance table
+        // check entry in file_maintenance table
         $fileMaintenance = new FileMaintenanceMapper($db);
         $fileLine = $fileMaintenance->findByPath($path);
-        if (!empty($fileLine)) {
+        if (!empty($fileLine)) { // update in File Maintenance table
             $oldHash = $fileLine->getHash();
             if ($oldHash != $newHash || $oldFlag == 'X') {
                 $flagUpdate = true;
                 $fileLine->setLastupdate((string) $today_str);
                 $fileLine->setHash($newHash);
                 $fileLine->setDeleted('');
-                $newNode = $fileMaintenance->update($fileLine); // update in File Maintenance table
+                $newNode = $fileMaintenance->update($fileLine); 
             }
-        } else {
+        } else { // insert into File Maintenance table
             $flagUpdate = true;
             $newFile = new FileMaintenance();
             $newFile->setPath(trim((string) $path));
             $newFile->setLastupdate((string) $today_str);
             $newFile->setHash($newHash);
             $newFile->setDeleted('');
-            $newNode = $fileMaintenance->insert($newFile); // insert into File Maintenance table
+            $newNode = $fileMaintenance->insert($newFile); 
         }
 
         return $flagUpdate;
