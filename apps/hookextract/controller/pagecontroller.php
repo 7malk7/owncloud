@@ -95,9 +95,9 @@ class PageController extends Controller {
      * @NoAdminRequired
      * @NoCSRFRequired
      */
-    public function xlsdwnl($formtype, $datefrom, $dateto) {
+    public function xlsdwnl($formtype, $datefrom, $dateto, $user) {
         $app = new \OCA\Hookextract\AppInfo\Hookextract();
-        $content = $app->dbGetXls($formtype, $datefrom, $dateto, $this->db);
+        $content = $app->dbGetXls($formtype, $datefrom, $dateto, $this->db, $user);
 
         $today = date_create();
         $today_str = $today->format('YmdHis');
@@ -270,7 +270,7 @@ class PageController extends Controller {
             $logger->error($result, array('app' => 'Hookextract'));
             $status = Http::STATUS_INTERNAL_SERVER_ERROR;
         }
-        
+
         return new DataResponse($result, $status);
     }
 
@@ -354,44 +354,51 @@ class PageController extends Controller {
      * @NoCSRFRequired
      */
     public function upload($filepath) {
-        if (isset($_FILES['filepath'])) {
-            if ($_FILES['filepath']['tmp_name'] && !$_FILES['filepath']['error']) {
-                $inputFile = $_FILES['filepath']['tmp_name'];
-                try {
-                    $inputFileType = \PHPExcel_IOFactory::identify($inputFile);
-                    $objReader = \PHPExcel_IOFactory::createReader($inputFileType);
-                    $objPHPExcel = $objReader->load($inputFile);
-                } catch (Exception $ex) {
-                    echo $ex->getMessage();
-                }
+        try {
+            if (isset($_FILES['filepath'])) {
+                if ($_FILES['filepath']['tmp_name'] && !$_FILES['filepath']['error']) {
+                    $inputFile = $_FILES['filepath']['tmp_name'];
+                    try {
+                        $inputFileType = \PHPExcel_IOFactory::identify($inputFile);
+                        $objReader = \PHPExcel_IOFactory::createReader($inputFileType);
+                        $objPHPExcel = $objReader->load($inputFile);
+                    } catch (Exception $ex) {
+                        echo $ex->getMessage();
+                    }
 
-                $objWorksheet = $objPHPExcel->getActiveSheet();
-                $highestRow = $objWorksheet->getHighestRow();
-                $highestColumn = $objWorksheet->getHighestColumn();
+                    $objWorksheet = $objPHPExcel->getActiveSheet();
+                    $highestRow = $objWorksheet->getHighestRow();
+                    $highestColumn = $objWorksheet->getHighestColumn();
 
-                $keys = $objWorksheet->rangeToArray('A1:' . $highestColumn . '1', NULL, TRUE, FALSE);
-                $data = $objWorksheet->rangeToArray('A2:' . $highestColumn . $highestRow, NULL, TRUE, FALSE);
+                    $keys = $objWorksheet->rangeToArray('A1:' . $highestColumn . '1', NULL, TRUE, FALSE);
+                    $data = $objWorksheet->rangeToArray('A2:' . $highestColumn . $highestRow, NULL, TRUE, FALSE);
 
-                // if the 1st row is empty then the whole document is empty
-                $errors = array_filter($data[0]);
-                if (empty($errors) == false) {
-                    $mapper = new EntryArchiveMapper($this->db);
-                    $inserted = $mapper->insertFromArray($keys[0], $data);
-                    if ($inserted) {
-                        $insertFlag = count($data);
+                    // if the 1st row is empty then the whole document is empty
+                    $errors = array_filter($data[0]);
+                    if (empty($errors) == false) {
+                        $mapper = new EntryArchiveMapper($this->db);
+                        $inserted = $mapper->insertFromArray($keys[0], $data);
+                        if ($inserted) {
+                            $insertFlag = count($data);
+                        } else {
+                            $insertFlag = -1;
+                        }
                     } else {
                         $insertFlag = -1;
                     }
                 } else {
+                    // echo "An error occured during uploading";
                     $insertFlag = -1;
                 }
             } else {
-                // echo "An error occured during uploading";
+                //echo "File hasn't been uploaded";
                 $insertFlag = -1;
             }
-        } else {
-            //echo "File hasn't been uploaded";
+        } catch (\Exception $ex) {
             $insertFlag = -1;
+            $imgurl = \OC::$server->getURLGenerator()->imagePath('hookextract', 'image002.jpg');
+            $params = ['user' => $this->userId, 'imgurl' => $imgurl, 'upload' => $insertFlag];
+            return new TemplateResponse('hookextract', 'main', $params);
         }
         $imgurl = \OC::$server->getURLGenerator()->imagePath('hookextract', 'image002.jpg');
         $params = ['user' => $this->userId, 'imgurl' => $imgurl, 'upload' => $insertFlag];

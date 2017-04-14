@@ -171,6 +171,7 @@
                                 '<input type="hidden" name="datefrom" value="' + $("#from").val() + '">' +
                                 '<input type="hidden" name="dateto" value="' + $("#to").val() + '">' +
                                 '<input type="hidden" name="formtype" value="' + $("#presel").val()[0] + '">' +
+                                '<input type="hidden" name="user" value="' + $("#user").val() + '">' +
                                 '</form>').attr('action', url);
                             document.body.appendChild($form[0]);
                             $form.submit();
@@ -242,8 +243,6 @@
             };
 
             debugger;
-
-            //            $('#fileUpload').submit();
 
             $.post(url, data).success(function (response) {
                 $('#iframebox').html(response);

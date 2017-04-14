@@ -36,16 +36,15 @@ class EntryArchiveMapper extends Mapper {
      * @param type $offset
      * @return type
      */
-    public function findByDate($datefrom, $dateto, $user, $limit=null, $offset=null){
-    	     $sql = 'select * from `*PREFIX*deduct_entry_archive`  '.
-    			' WHERE date_entry >= "'.$datefrom.
-    			'" AND date_entry <=  "'. $dateto .'" AND creator = "' . $user . '"';
-    	try{
-    		return $this->findEntities($sql, [] ,$limit, $offset);
-    	}
-    	catch(DoesNotExistException $exc) {
-    		return null;
-    	}
+    public function findByDate($datefrom, $dateto, $user, $limit = null, $offset = null) {
+        $sql = 'select * from `*PREFIX*deduct_entry_archive`  ' .
+                ' WHERE date_entry >= "' . $datefrom .
+                '" AND date_entry <=  "' . $dateto . '" AND creator = "' . $user . '"';
+        try {
+            return $this->findEntities($sql, [], $limit, $offset);
+        } catch (DoesNotExistException $exc) {
+            return null;
+        }
     }
 
     /**
@@ -54,10 +53,23 @@ class EntryArchiveMapper extends Mapper {
      * @param array $data
      */
     public function insertFromArray(array $keys, array $data) {
-        $values = $this->prepareData($keys, $data);
-        $sql = "INSERT INTO `*PREFIX*deduct_entry_archive` (`formid`, `key`, `value`, `modified`, `date_entry`, `creator`) "
-                . "VALUES " . $values;
-        return $stmt = $this->execute($sql);
+        try {
+            $rows = $this->prepareData($keys, $data);
+            foreach ($rows as $row) {
+                $entryArchiveEntity = new entryarchive();
+                $entryArchiveEntity->setFormid($row[0]);
+                $entryArchiveEntity->setKey($row[1]);
+                $entryArchiveEntity->setValue($row[2]);
+                $entryArchiveEntity->setModified($row[3]);
+                $entryArchiveEntity->setDateEntry($row[4]);
+                $entryArchiveEntity->setCreator($row[5]);
+                $this->insert($entryArchiveEntity);
+            }
+        } catch (\Exception $ex) {
+            throw new \Exception($ex->getMessage());
+        }
+        
+        return count($rows);
     }
 
     /**
@@ -96,18 +108,21 @@ class EntryArchiveMapper extends Mapper {
             preg_match('/\d{4}-\d{2}-\d{2}/', $dataRow[3], $dateMatch);
             $date = isset($dateMatch[0]) ? $dateMatch[0] : "";
             for ($i = 0; $i < count($keys); $i++) {
-                $dbRow = '( ' . $counter . ', '
-                        . "'" . $keys[$i] . "'" . ', '
-                        . "'" . $dataRow[$i] . "'" . ', '
-                        . "'" . $today . "'" . ', '
-                        . "'" . $date . "'" . ', '
-                        . "'" . $creator . "'" . ')';
+                $dbRow = array();
+//                $dbRow = '( ' . $counter . ', '
+//                        . "'" . $keys[$i] . "'" . ', '
+//                        . "'" . $dataRow[$i] . "'" . ', '
+//                        . "'" . $today . "'" . ', '
+//                        . "'" . $date . "'" . ', '
+//                        . "'" . $creator . "'" . ')';
+                array_push($dbRow, $counter, $keys[$i], $dataRow[$i], $today, $date, $creator);
                 $dbData[] = $dbRow;
                 unset($dbRow);
             }
         }
-        $values = implode(', ', $dbData);
-        return $values;
+//        $values = implode(', ', $dbData);
+//        return $values;
+        return $dbData;
     }
 
 }
